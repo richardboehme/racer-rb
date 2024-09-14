@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "ruby.h": "c",
+    "worker.h": "c",
+    "tiny_queue.h": "c",
+    "traces.h": "c",
+    "types.h": "c",
+    "vm.h": "c"
+  }
+}
