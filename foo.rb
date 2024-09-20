@@ -10,8 +10,8 @@ foo(1, 2)
 
 foo("a", "b")
 
-p Racer.stop
+Racer.stop
 
 p "stopped script"
 
-# Racer.flush
+Racer.flush

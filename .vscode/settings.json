@@ -5,6 +5,7 @@
     "tiny_queue.h": "c",
     "traces.h": "c",
     "types.h": "c",
-    "vm.h": "c"
+    "vm.h": "c",
+    "cstdlib": "cpp"
   }
 }
