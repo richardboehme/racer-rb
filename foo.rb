@@ -1,17 +1,24 @@
 require_relative "lib/racer"
+require "benchmark"
 
 def foo(a, b)
   a + b
 end
 
-Racer.start
+Racer.start_agent
 
-foo(1, 2)
+# wait for unix socket to be available
+sleep 2
 
-foo("a", "b")
+p Benchmark.measure {
+  Racer.start
 
-Racer.stop
+  5000.times do
+    foo(1, 2)
 
-p "stopped script"
+    foo("a", "b")
+  end
 
+  Racer.stop
+}
 Racer.flush

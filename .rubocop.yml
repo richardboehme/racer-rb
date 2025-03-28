@@ -1,5 +1,6 @@
 AllCops:
-  TargetRubyVersion: 3.0
+  TargetRubyVersion: 3.4
+  DisabledByDefault: true
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

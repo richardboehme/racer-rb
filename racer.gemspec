@@ -34,6 +34,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.extensions = ["ext/racer/extconf.rb"]
 
+  spec.add_dependency "drb"
+  spec.add_dependency "rbs"
+
   spec.add_development_dependency "rake-compiler"
 
   # Uncomment to register a new dependency of your gem
