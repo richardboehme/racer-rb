@@ -10,7 +10,7 @@ typedef struct ReturnTrace
   char *method_id;
   char *method_path;
   long method_lineno;
-  char *return_type;
+  //char *return_type;
   // Params is an array where each even element is a parameter name
   // and the next element is the param type
   long params_size;

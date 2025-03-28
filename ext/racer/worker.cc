@@ -18,12 +18,11 @@ void *init_worker(void *arg)
       break;
 
     trace = static_cast<ReturnTrace *>(message->data);
-    fprintf(f1, "%s, %ld, %s, %s, %s, %ld, %s", trace->callee_path, trace->callee_lineno, trace->callee_id, trace->method_id, trace->method_path, trace->method_lineno, trace->return_type);
-    // fprintf(f1, "%s", trace->callee_id);
-    //  for (long i = 0; i < trace->params_size; ++i)
-    //  {
-    //    fprintf(f1, ", [%s, %s]", trace->params[i * 2], trace->params[i * 2 + 1]);
-    //  }
+    fprintf(f1, "%s, %ld, %s, %s, %s, %ld", trace->callee_path, trace->callee_lineno, trace->callee_id, trace->method_id, trace->method_path, trace->method_lineno);
+    for (long i = 0; i < trace->params_size; ++i)
+    {
+      fprintf(f1, ", [%s, %s]", trace->params[i * 2], trace->params[i * 2 + 1]);
+    }
     fprintf(f1, "\n");
 
     // free(trace->callee_id);

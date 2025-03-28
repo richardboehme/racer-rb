@@ -1,4 +1,4 @@
-require "racer"
+require_relative "lib/racer"
 
 def foo(a, b)
   a + b

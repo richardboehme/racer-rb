@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/richard/.local/share/mise/installs/ruby/3.3.4/include/ruby-3.3.0/**"
+                "/home/richard/.rubies/ruby-master/include/ruby-3.4.0+1/**"
+                //"/home/richard/.local/share/mise/installs/ruby/3.3.4/include/ruby-3.3.0/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

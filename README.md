@@ -1,5 +1,11 @@
 # Racer RB
 
+Use following command to use new ruby version
+```
+PATH="/home/richard/.rubies/ruby-master/bin:$PATH" bundle exec ruby foo.rb
+```
+
+
 TODO: Delete this and the text below, and describe your gem
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/racer`. To experiment with that code, run `bin/console` for an interactive prompt.

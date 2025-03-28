@@ -2,23 +2,30 @@ tp2 = TracePoint.new(:call) do |tp|
   p [:call, caller[0..2], Thread.current.native_thread_id]
 end
 
-tp = TracePoint.new(:return) do |tp|
+tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
+  binding.irb
   p [
     tp.path,
     tp.lineno,
     tp.callee_id, # name of method that was called -> in path:lineno
     tp.method_id, # name of actual method
     tp.self.method(tp.method_id).source_location,
-    tp.return_value,
+    # tp.return_value,
     tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
   ]
 end
 tp.enable
 # tp2.enable
 
-class Foo
+class Bar
+  def foo(c, d)
+  end
+end
+
+class Foo < Bar
   def foo(a, b)
+    super
     [a, b]
   end
 end

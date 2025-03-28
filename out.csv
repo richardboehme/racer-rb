@@ -1,2 +1,2 @@
-foo
-foo
+foo.rb, 3, foo, foo, foo.rb, 3foo, [a, Integer], [b, Integer]
+foo.rb, 3, foo, foo, foo.rb, 3foo, [a, String], [b, String]

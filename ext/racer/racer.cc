@@ -42,13 +42,13 @@ process_call_event(VALUE trace_point, void *data)
   // rb_p(rb_tracearg_method_id(trace_arg));
   // rb_p(method);
 
-  VALUE parameters = rb_funcall(method, rb_intern("parameters"), 0);
-  char **params = (char **)malloc(sizeof(char *) * rb_array_len(parameters) * 2);
+  VALUE parameters = rb_tracearg_parameters(trace_arg);
+  auto params_size = rb_array_len(parameters);
+  // Array of character pointers, each even value is the param name, the following string is the type name
+  char **params = (char **)malloc(sizeof(char *) * params_size * 2);
   VALUE binding = rb_tracearg_binding(trace_arg);
 
-  // rb_p(parameters);
-  // rb_p(LONG2FIX(rb_array_len(parameters)));
-  for (long i = 0; i < rb_array_len(parameters); ++i)
+  for (long i = 0; i < params_size; ++i)
   {
     VALUE param = rb_ary_entry(parameters, i);
     VALUE name = rb_ary_entry(param, 1);
@@ -60,37 +60,44 @@ process_call_event(VALUE trace_point, void *data)
     {
       const char *param_name = rb_id2name(SYM2ID(name));
       params[i * 2] = strdup(param_name);
-      params[i * 2 + 1] = strdup(param_name);
 
-      // rb_p(name);
-      // rb_p(rb_funcall(binding, rb_intern("local_variable_defined?"), 1, name));
+      VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
+      const char *param_class = rb_class2name(rb_class_of(value));
+      params[i * 2 + 1] = strdup(param_class);
 
-      if (!RB_TEST(rb_funcall(binding, rb_intern("local_variable_defined?"), 1, name)))
-      {
-        rb_p(rb_tracearg_path(trace_arg));
-        rb_p(rb_tracearg_lineno(trace_arg));
-        rb_p(rb_tracearg_method_id(trace_arg));
-        // TODO: There is some mystery here about callee vs method when retrieving the arguments
-        // This might be auto-solved if we use the call event (which we need to anyway) to retrieve method params
-        if (call->method_path)
-        {
-          rb_p(rb_str_new_cstr(call->method_path));
-          rb_p(LONG2FIX(call->method_lineno));
-        }
-        rb_p(name);
-      }
-
-      // VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-      // const char *param_class = rb_class2name(rb_class_of(value));
-      // params[i * 2 + 1] = strdup(param_class);
+      // TODO: This breaks because when using super tp.self returns the module that calls
+      // super instead of the one that contains the callee. Due to this tp.self.method(tp.method_id)
+      // returns the method that calls super instead of the one that contains the super method.
+      // Those parameters might be completely different and breaks our code
+      // We can fix this one we can use tp.parameters directly
+      // if (!RB_TEST(rb_funcall(binding, rb_intern("local_variable_defined?"), 1, name)))
+      // {
+      //   // rb_p(rb_str_new_cstr("---------------------------"));
+      //   // rb_p(rb_tracearg_callee_id(trace_arg));
+      //   // rb_p(rb_tracearg_path(trace_arg));
+      //   // rb_p(rb_tracearg_lineno(trace_arg));
+      //   // rb_p(rb_tracearg_method_id(trace_arg));
+      //   // if (call->method_path)
+      //   // {
+      //   //   rb_p(rb_str_new_cstr(call->method_path));
+      //   //   rb_p(LONG2FIX(call->method_lineno));
+      //   // }
+      //   // rb_p(name);
+      // }
+      // else
+      // {
+      //   VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
+      //   const char *param_class = rb_class2name(rb_class_of(value));
+      //   params[i * 2 + 1] = strdup(param_class);
+      // }
     }
   }
-  call->params_size = rb_array_len(parameters);
+  call->params_size = params_size;
   call->params = params;
 
   // missing type information
-  const char *original_return_type = rb_class2name(rb_class_of(rb_tracearg_return_value(trace_arg)));
-  call->return_type = strdup(original_return_type);
+  // const char *original_return_type = rb_class2name(rb_class_of(rb_tracearg_return_value(trace_arg)));
+  // call->return_type = strdup(original_return_type);
 
   tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
   message->queue_state = 1;
@@ -101,7 +108,7 @@ process_call_event(VALUE trace_point, void *data)
 
 static VALUE start(VALUE self)
 {
-  tpCall = rb_tracepoint_new(Qnil, RUBY_EVENT_RETURN, process_call_event, nullptr);
+  tpCall = rb_tracepoint_new(Qnil, RUBY_EVENT_CALL, process_call_event, nullptr);
 
   rb_tracepoint_enable(tpCall);
 
