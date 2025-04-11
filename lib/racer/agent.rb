@@ -66,18 +66,23 @@ class Racer::Agent
           end
 
           data = data.split(",")
-          method_owner, method_owner_type, method_name, *params = data
+          method_owner, method_owner_type, method_name, return_type, *params = data
 
           @queue.push(
             Racer::Trace.new(
               method_owner:,
               method_owner_type:,
               method_name:,
-              params: params.each_slice(2).to_a
+              return_type:,
+              params: params.each_slice(3).map { build_param(*it) }
             )
           )
         end
       end
     end
+  end
+
+  def build_param(name, class_name, type)
+    Racer::Trace::Param.new(name: name.to_sym, class_name:, type: Racer::Trace::Param::TYPES.fetch(type.to_i))
   end
 end

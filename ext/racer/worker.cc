@@ -24,10 +24,11 @@ void *init_worker(void *arg)
 
     // TODO: If a method has lots of parameters this buffer will not be large enough
     char buffer[1024];
-    auto end = snprintf(buffer, sizeof(buffer), "%s,%s,%s", trace->method_owner_name, trace->method_owner_type, trace->method_name);
+    auto end = snprintf(buffer, sizeof(buffer), "%s,%s,%s,%s", trace->method_owner_name, trace->method_owner_type, trace->method_name, trace->return_type);
     for (long i = 0; i < trace->params_size; ++i)
     {
-      end += snprintf(buffer + end, sizeof(buffer) - end, ",%s,%s", trace->params[i * 2], trace->params[i * 2 + 1]);
+      auto param = trace->params[i];
+      end += snprintf(buffer + end, sizeof(buffer) - end, ",%s,%s,%d", param.name, param.class_name, param.type);
     }
     buffer[end] = '\n';
 

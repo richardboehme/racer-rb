@@ -11,7 +11,7 @@ module Racer::Collectors
       @results[trace.method_owner][trace.method_name] ||= []
 
       @results[trace.method_owner][trace.method_name].each do |traces|
-        if traces.params == trace.params
+        if traces.params == trace.params && traces.return_type == trace.return_type
           return
         end
       end
@@ -52,19 +52,9 @@ module Racer::Collectors
                 method_type: RBS::MethodType.new(
                   type_params: [],
                   type: RBS::Types::Function.new(
-                    required_positionals: overload_trace.params.map do |(name, type)|
-                      RBS::Types::Function::Param.new(
-                        type:,
-                        name:
-                      )
-                    end,
-                    optional_positionals: [],
-                    trailing_positionals: [],
-                    required_keywords: {},
-                    optional_keywords: {},
+                    **method_parameters(overload_trace.params),
                     rest_positionals: nil,
-                    rest_keywords: nil,
-                    return_type: RBS::Types::Bases::Any.new(location: nil)
+                    return_type: RBS::Types::ClassInstance.new(name: overload_trace.return_type, args: [], location: nil)
                   ),
                   block: nil,
                   location: nil
@@ -89,6 +79,55 @@ module Racer::Collectors
         location: nil,
         comment: nil
       )
+    end
+
+    def method_parameters(params)
+      {
+        required_positionals: [],
+        optional_positionals: [],
+        trailing_positionals: [],
+        required_keywords: {},
+        optional_keywords: {},
+        rest_keywords: nil
+      }.tap do |parameters|
+        params.each do |param|
+          rbs_param =
+
+
+          case param.type
+          when :required, :optional
+            rbs_param =
+              RBS::Types::Function::Param.new(
+                type: param.class_name,
+                name: param.name
+              )
+
+            if param.type == :required
+              parameters[:required_positionals] << rbs_param
+            else
+              parameters[:optional_positionals] << rbs_param
+            end
+          when :keyword_required, :keyword_optional
+            rbs_param =
+              RBS::Types::Function::Param.new(
+                type: param.class_name,
+                name: nil
+              )
+
+            if param.type == :keyword_required
+              parameters[:required_keywords][param.name] = rbs_param
+            else
+              parameters[:optional_keywords][param.name] = rbs_param
+            end
+          when :keyword_rest
+            parameters[:rest_keywords] =
+              RBS::Types::Function::Param.new(
+                type: param.class_name == "(null)" ? "" : param.class_name,
+                name: param.name == :** ? nil : param.name
+              )
+          end
+        end
+      end
     end
   end
 end

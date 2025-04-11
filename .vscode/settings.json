@@ -6,6 +6,7 @@
     "traces.h": "c",
     "types.h": "c",
     "vm.h": "c",
-    "cstdlib": "cpp"
+    "cstdlib": "cpp",
+    "unordered_map": "cpp"
   }
 }
