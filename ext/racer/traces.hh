@@ -4,13 +4,9 @@
 
 typedef struct ReturnTrace
 {
-  char *callee_id;
-  char *callee_path;
-  long callee_lineno;
-  char *method_id;
-  char *method_path;
-  long method_lineno;
-  //char *return_type;
+  const char *method_owner_name;
+  const char *method_owner_type;
+  const char *method_name;
   // Params is an array where each even element is a parameter name
   // and the next element is the param type
   long params_size;

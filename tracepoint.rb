@@ -1,6 +1,6 @@
-tp2 = TracePoint.new(:call) do |tp|
-  p [:call, caller[0..2], Thread.current.native_thread_id]
-end
+# tp2 = TracePoint.new(:call) do |tp|
+#   p [:call, caller[0..2], Thread.current.native_thread_id]
+# end
 
 tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
@@ -10,13 +10,18 @@ tp = TracePoint.new(:call) do |tp|
     tp.lineno,
     tp.callee_id, # name of method that was called -> in path:lineno
     tp.method_id, # name of actual method
-    tp.self.method(tp.method_id).source_location,
+    tp.self,
     # tp.return_value,
     tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
   ]
 end
-tp.enable
 # tp2.enable
+require_relative "lib/racer"
+# tp.enable
+
+Racer.start_agent
+
+Racer.start
 
 class Bar
   def foo(c, d)
@@ -37,6 +42,10 @@ f.foo(1, 2)
 f.foo("a", "b")
 
 tp.disable
+
+Racer.stop
+
+# tp.disable
 # tp2.disable
 
 # Problem: We cannot get the original parameters in the return event because they might have been modified

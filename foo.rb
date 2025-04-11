@@ -7,18 +7,17 @@ end
 
 Racer.start_agent
 
-# wait for unix socket to be available
-sleep 2
-
 p Benchmark.measure {
-  Racer.start
 
-  5000.times do
+  Racer.start
+  500000.times do
     foo(1, 2)
 
     foo("a", "b")
   end
-
   Racer.stop
+
+  p "finished"
+
 }
-Racer.flush
+# Racer.flush

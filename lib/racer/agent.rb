@@ -11,21 +11,24 @@ class Racer::Agent
       raise "tried to start server again"
     end
 
+    at_exit do
+      File.unlink(@server_path)
+    end
+
     @server = UNIXServer.new(@server_path)
 
     worker_thread =
       Thread.new do
-        # collector = Racer::Collectors::RBSCollector.new
-        # while (trace = @queue.pop) do
-        #   collector.collect(trace)
-        # end
-        # collector.stop
+        collector = Racer::Collectors::RBSCollector.new
+        while (trace = @queue.pop) do
+          collector.collect(trace)
+        end
+        collector.stop
       end
 
     main_loop
 
     @server.close
-    File.unlink(@server_path)
     worker_thread.join
   end
 
@@ -38,6 +41,11 @@ class Racer::Agent
       # this is not really good because new clients need to wait until first client finished but for now its okay
       loop do
         received_message = connection.read(1024)
+        # TODO: Is this an error? I would expect it waits until there is something to read?
+        next if received_message.nil?
+
+        # File.write("messages", "#{received_message}\n\n", mode: "a+")
+
         *messages, last_message = received_message.split("\n")
 
         if pending_message
@@ -51,7 +59,6 @@ class Racer::Agent
           pending_message = last_message
         end
 
-
         messages.each do |data|
           if data == "stop"
             @queue.close
@@ -59,12 +66,13 @@ class Racer::Agent
           end
 
           data = data.split(",")
-          method_owner, method_owner_type, *params = data
+          method_owner, method_owner_type, method_name, *params = data
 
           @queue.push(
             Racer::Trace.new(
               method_owner:,
               method_owner_type:,
+              method_name:,
               params: params.each_slice(2).to_a
             )
           )
