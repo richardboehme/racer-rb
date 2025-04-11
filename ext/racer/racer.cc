@@ -12,7 +12,7 @@ static int socketFd = 0;
 
 static VALUE Racer = Qnil;
 
-static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, blockParam, anonRest, anonKeyrest, anonBlock = -1;
+static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock = -1;
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
@@ -20,11 +20,34 @@ static void
 process_call_event(rb_trace_arg_t *trace_arg)
 {
   ReturnTrace *trace = (struct ReturnTrace *)malloc(sizeof(struct ReturnTrace));
+  trace->rescued = false;
 
   trace->method_name = strdup(rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
 
   VALUE defined_class = rb_tracearg_defined_class(trace_arg);
+  if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
+    defined_class = rb_class_attached_object(defined_class);
+  }
+
   trace->method_owner_name = strdup(rb_class2name(defined_class));
+
+  long fiber_id = rb_fiber_current();
+  auto stack_pair = call_stacks.find(fiber_id);
+  if(stack_pair != call_stacks.end()) {
+    auto stack = (*stack_pair).second;
+    if(!stack.empty()) {
+      auto previous_trace = (*stack_pair).second.top();
+      // Attempt to detect retries of a method using the `retry` keyword
+      if(previous_trace->rescued && strcmp(trace->method_name, previous_trace->method_name) == 0 && strcmp(trace->method_owner_name, previous_trace->method_owner_name) == 0) {
+        //fprintf(stderr, "[%ld] detected retry of method %s\n", fiber_id, trace->method_name);
+        free(trace->method_name);
+        free(trace->method_owner_name);
+        free(trace);
+        return;
+      }
+    }
+  }
+
   trace->method_owner_type = strdup(rb_class2name(rb_class_of(defined_class)));
 
   VALUE parameters = rb_tracearg_parameters(trace_arg); // We may be able to cache this for each method? or access the parsed stuff idk
@@ -44,8 +67,8 @@ process_call_event(rb_trace_arg_t *trace_arg)
     if (RB_TEST(name))
     {
       auto param_name_id = rb_sym2id(name);
-      const char *param_name = rb_id2name(SYM2ID(name));
-      const char *param_class;
+      char *param_name = strdup(rb_id2name(SYM2ID(name)));
+      char *param_class;
 
       if(param_name_id != anonRest && param_name_id != anonKeyrest && param_name_id != anonBlock) {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
@@ -80,47 +103,119 @@ process_call_event(rb_trace_arg_t *trace_arg)
         continue;
       }
 
-      trace->params[i] = { param_name, param_class, type };
+      trace->params[trace->params_size] = { param_name, param_class, type };
       trace->params_size++;
     } else {
-      rb_p(rb_str_new_cstr("PARAMETER WITHOUT NAME?"));
-      rb_p(param);
+      if(param_type == nokeyParam) {
+        // noKey means **nil which cannot be typed with RBS i think, so we ignore it for now
+        continue;
+      }
+
+      if(param_type == reqParam) {
+        // TODO: This is probably def foo((bar, foo)); end
+        // Can we type this? If it only happens with arrays we might at least give information about it being an array? I wonder though how RBS
+        // handles this in general. For the caller site the array type helps a bit, but inside the method this does not help at all and we have no parameter name
+        continue;
+      }
+
+      auto inspected_params = rb_inspect(parameters);
+      rb_warn("Unexpected: Parameter has no name for method %s, parameters: %s", trace->method_name, StringValueCStr(inspected_params));
     }
   }
 
-  long  fiber_id = rb_fiber_current();
 
-  auto stack = call_stacks.find(fiber_id);
-  if(stack == call_stacks.end()) {
-    call_stacks.insert({ fiber_id, std::stack<ReturnTrace*>({trace}) });
+  if(stack_pair == call_stacks.end()) {
+    auto stack = std::stack<ReturnTrace*>();
+    stack.push(trace);
+    fprintf(stderr, "[%ld] inserting method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
+    call_stacks.insert({ fiber_id, stack });
   } else {
-    (*stack).second.push(trace);
+    fprintf(stderr, "[%ld] pushing method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
+    auto& stack = (*stack_pair).second;
+    stack.push(trace);
   }
-
-  // tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
-  // message->queue_state = 1;
-  // message->data = trace;
-
-  // tiny_queue_push(tiny_queue, message);
 }
 
 static void
 process_return_event(rb_trace_arg_t* trace_arg) {
   long fiber_id = rb_fiber_current();
 
-  auto stack = call_stacks.find(fiber_id);
-  if(stack == call_stacks.end()) {
-    rb_warn("Unexpected: No value in callstack for return of %s\n", rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+  auto stack_pair = call_stacks.find(fiber_id);
+  if(stack_pair == call_stacks.end()) {
+    // This might happen if another thread started calling before our TracePoint was enabled
+    rb_warn("[%ld] Unexpected: No callstack for return of %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
   } else {
-    auto trace = (*stack).second.top();
-    (*stack).second.pop();
+    auto& stack = (*stack_pair).second;
 
-    trace->return_type = strdup(rb_class2name(rb_class_of((rb_tracearg_return_value(trace_arg)))));
+    if(stack.empty()) {
+      // This might happen if the method call that returns now activated our tracepoint
+      rb_warn("[%ld] Unexpected: Call stack empty for method %s\n", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+
+    auto trace = stack.top();
+    if(!trace) {
+      rb_warn("[%ld] Unexpected: Trace is null for method: %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+
+    if(strcmp(trace->method_name, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg)))) != 0) {
+      // This could happen if we return from a function for which we do not have a call recorded
+      // def foo -> not recorded
+      //   Racer.start
+      // end -> recorded but no call stack entry
+      rb_warn("[%ld] Return: Method mismatch, expected %s, got %s", fiber_id, trace->method_name, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+
+    stack.pop();
+    //fprintf(stderr, "[%ld] popped method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
+
+    auto return_value = rb_tracearg_return_value(trace_arg);
+    auto class_value = rb_class2name(rb_class_of(return_value));
+
+    if(!class_value) {
+      rb_warn("[%ld] Unexpected: Return value has no class for %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+    trace->return_type = strdup(class_value);
 
     tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
     message->queue_state = 1;
     message->data = trace;
     tiny_queue_push(tiny_queue, message);
+  }
+}
+
+static void
+process_rescued_event(rb_trace_arg_t* trace_arg) {
+  long fiber_id = rb_fiber_current();
+
+  auto stack_pair = call_stacks.find(fiber_id);
+  if(stack_pair != call_stacks.end()) {
+    auto& stack = (*stack_pair).second;
+
+    if(stack.empty()) {
+      // This might happen if the method call that returns now activated our tracepoint
+      rb_warn("[%ld] Unexpected: Call stack empty for method %s\n", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+
+    auto trace = stack.top();
+
+    if(!trace) {
+      rb_warn("[%ld] Unexpected: Trace is null for method: %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+      return;
+    }
+
+    if(strcmp(trace->method_name, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg)))) != 0) {
+      // If these do not match the rescue happens inside a block and not inside the method. The method is not being retried in this case so we ignore this event.
+      return;
+    }
+
+    auto exception = rb_inspect(rb_tracearg_raised_exception(trace_arg));
+    //fprintf(stderr, "[%ld] setting rescued to true for method %s#%s, exception: %s\n", fiber_id, trace->method_name, trace->method_owner_name, StringValueCStr(exception));
+    trace->rescued = true;
   }
 }
 
@@ -135,6 +230,9 @@ process_tracepoint(VALUE trace_point, void *data)
   case RUBY_EVENT_RETURN:
     process_return_event(trace_arg);
     break;
+  case RUBY_EVENT_RESCUE:
+    process_rescued_event(trace_arg);
+    break;
   }
 }
 
@@ -144,8 +242,6 @@ static VALUE start(VALUE self)
     rb_tracepoint_enable(tpCall);
     return Qnil;
   }
-
-  tpCall = rb_tracepoint_new(Qnil, RUBY_EVENT_CALL | RUBY_EVENT_RETURN, process_tracepoint, nullptr);
 
   socketFd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socketFd < 0) {
@@ -170,6 +266,7 @@ static VALUE start(VALUE self)
   worker_data->socket_fd = socketFd;
   pthread_create(&pthread, nullptr, init_worker, worker_data);
 
+  tpCall = rb_tracepoint_new(Qnil, RUBY_EVENT_CALL | RUBY_EVENT_RETURN | RUBY_EVENT_RESCUE, process_tracepoint, nullptr);
   rb_tracepoint_enable(tpCall);
 
   return Qnil;
@@ -177,7 +274,34 @@ static VALUE start(VALUE self)
 
 static VALUE stop(VALUE self)
 {
-  rb_tracepoint_disable(tpCall);
+  if(RB_TEST(tpCall)) {
+    rb_tracepoint_disable(tpCall);
+  }
+
+  for(auto &stack_pair : call_stacks) {
+    auto &stack = stack_pair.second;
+    while(!stack.empty()) {
+      auto trace = stack.top();
+      stack.pop();
+
+      // TODO: Implement free_trace or deconstructor?
+      free(trace->method_name);
+      free(trace->method_owner_name);
+      free(trace->method_owner_type);
+      for(long i = 0; i < trace->params_size; ++i) {
+        auto param = trace->params[i];
+        if(param.class_name) {
+          free(param.class_name);
+        }
+        free(param.name);
+      }
+
+      assert(!trace->return_type);
+
+      free(trace);
+    }
+  }
+  call_stacks.clear();
 
   return Qnil;
 }
@@ -189,10 +313,8 @@ static void flush_end(VALUE arg)
 
   flushed = 1;
 
-  if(RB_TEST(tpCall)) {
-    stop(arg);
-    tpCall = Qnil;
-  }
+  stop(arg);
+  tpCall = Qnil;
 
   struct tiny_queue_message_t *message = (struct tiny_queue_message_t *)malloc(sizeof(struct tiny_queue_message_t));
   message->queue_state = 0;
@@ -226,6 +348,7 @@ Init_racer(void)
   keyreqParam = rb_intern("keyreq");
   keyParam = rb_intern("key");
   keyrestParam = rb_intern("keyrest");
+  nokeyParam = rb_intern("nokey");
   blockParam = rb_intern("block");
   anonRest = rb_intern("*");
   anonKeyrest = rb_intern("**");

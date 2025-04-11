@@ -39,9 +39,13 @@ f = Foo.new
 
 f.foo(1, 2)
 
+Racer.stop
+
+Racer.start
+
 f.foo("a", "b")
 
-tp.disable
+# tp.disable
 
 Racer.stop
 

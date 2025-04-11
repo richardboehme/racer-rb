@@ -13,21 +13,22 @@ enum ParamType {
 };
 
 typedef struct Parameter {
-  const char* name = nullptr;
-  const char* class_name = nullptr;
+  char* name = nullptr;
+  char* class_name = nullptr;
   ParamType type;
 } Parameter;
 
 typedef struct ReturnTrace
 {
-  const char *method_owner_name;
-  const char *method_owner_type;
-  const char *method_name;
-  const char *return_type;
+  char *method_owner_name;
+  char *method_owner_type;
+  char *method_name;
+  char *return_type;
   // Params is an array where each even element is a parameter name
   // and the next element is the param type
   long params_size;
   Parameter *params;
+  bool rescued;
 } ReturnTrace;
 
 #endif /* TRACES_H */

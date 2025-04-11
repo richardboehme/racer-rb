@@ -36,21 +36,19 @@ void *init_worker(void *arg)
       perror("socket send");
     }
 
-    // free(trace->callee_id);
-    // free(trace->callee_path);
-    // free(trace->method_id);
-    // if (trace->method_path)
-    //   free(trace->method_path);
-    // free(trace->return_type);
-
-    // for (long i = 0; i < trace->params_size; ++i)
-    // {
-    //   free(trace->params[i * 2]);
-    //   free(trace->params[i * 2 + 1]);
-    // }
-
-    // free(trace);
-    // free(message);
+    free(trace->method_name);
+    free(trace->method_owner_name);
+    free(trace->method_owner_type);
+    free(trace->return_type);
+    for(long i = 0; i < trace->params_size; ++i) {
+      auto &param = trace->params[i];
+      if(param.class_name) {
+        free(param.class_name);
+      }
+      free(param.name);
+    }
+    free(trace);
+    free(message);
   }
 
   return nullptr;

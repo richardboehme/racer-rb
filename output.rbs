@@ -1,10 +1,4 @@
-class ::Object
-  def foo: (Integer a, Integer b) -> Integer
-         | (String a, String b) -> String
-         | ...
-end
-
-class ::Integer
-  def times: () -> Integer
-           | ...
+class ::Formatter
+  def call: (MyForm form) -> Hash
+          | ...
 end
