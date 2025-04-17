@@ -44,6 +44,7 @@ GEM
     ruby-progressbar (1.13.0)
     strscan (3.1.0)
     unicode-display_width (2.5.0)
+    vernier (1.7.0)
 
 PLATFORMS
   ruby
@@ -55,6 +56,7 @@ DEPENDENCIES
   rake (~> 13.0)
   rake-compiler
   rubocop (~> 1.21)
+  vernier
 
 BUNDLED WITH
    2.5.9

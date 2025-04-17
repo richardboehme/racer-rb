@@ -1,3 +1,5 @@
+require "json"
+require "vernier"
 
 class Racer::Agent
   def initialize(server_path)
@@ -68,7 +70,9 @@ class Racer::Agent
             return
           end
 
-          data = data.split(",")
+          data = JSON.parse(data)
+          # data = data.split(",")
+          # File.write("messages", "#{data}\n\n", mode: "a+")
           method_owner, method_owner_type, method_name, return_type, *params = data
 
           @queue.push(
@@ -77,7 +81,7 @@ class Racer::Agent
               method_owner_type:,
               method_name:,
               return_type:,
-              params: params.each_slice(3).map { build_param(*it, data) }
+              params: params.each_slice(3).map { build_param(*it) }
             )
           )
         end
@@ -85,10 +89,10 @@ class Racer::Agent
     end
   end
 
-  def build_param(name, class_name, type, message)
+  def build_param(name, class_name, type)
     type =
       Racer::Trace::Param::TYPES.fetch(type.to_i) do |key|
-        warn "Unexpected return type received #{key}, message: #{message}"
+        warn "Unexpected return type received #{key}"
         Racer::Trace::Param::TYPES.first
       end
 

@@ -20,4 +20,6 @@ p Benchmark.measure {
   p "finished"
 
 }
-# Racer.flush
+p Benchmark.measure {
+  Racer.flush
+}

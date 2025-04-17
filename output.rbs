@@ -1,4 +1,0 @@
-class ::Formatter
-  def call: (MyForm form) -> Hash
-          | ...
-end

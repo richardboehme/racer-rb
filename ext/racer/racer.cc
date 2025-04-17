@@ -16,6 +16,40 @@ static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, no
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
+static inline char*
+class_to_name(VALUE klass) {
+  auto class_name = rb_class_path_cached(rb_class_real(klass));
+  if(RB_NIL_P(class_name)) {
+    if(RB_TYPE_P(class_name, T_CLASS)) {
+      do {
+        klass = rb_class_superclass(klass);
+        if(!RB_TEST(klass)) {
+          break;
+        }
+
+        class_name = rb_class_path_cached(klass);
+      } while(RB_NIL_P(class_name));
+    } else {
+      // Module
+      return strdup("Module");
+    }
+  }
+
+  if(RB_NIL_P(class_name)) {
+    auto klass_inspect = rb_inspect(klass);
+    rb_warn("UNEXPECTED CLASS NAME IS NIL (klass = %s)", StringValueCStr(klass_inspect));
+    return nullptr;
+  } else
+  if(!RB_TYPE_P(class_name, T_STRING))
+  {
+    auto name = rb_class2name(rb_class_real(klass));
+    rb_warn("UNEPXETED CLASS NAME IS NOT STRING BUT KLASS: %s", name);
+    return strdup(name);
+  } else {
+    return strdup(StringValueCStr(class_name));
+  }
+}
+
 static void
 process_call_event(rb_trace_arg_t *trace_arg)
 {
@@ -26,10 +60,15 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
   VALUE defined_class = rb_tracearg_defined_class(trace_arg);
   if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
-    defined_class = rb_class_attached_object(defined_class);
+    VALUE tmp_defined_class = rb_class_attached_object(defined_class);
+    if(RB_TYPE_P(tmp_defined_class, T_CLASS)) {
+      defined_class = tmp_defined_class;
+    } else {
+      // TODO: Check these cases....
+    }
   }
 
-  trace->method_owner_name = strdup(rb_class2name(defined_class));
+  trace->method_owner_name = class_to_name(defined_class);
 
   long fiber_id = rb_fiber_current();
   auto stack_pair = call_stacks.find(fiber_id);
@@ -48,7 +87,18 @@ process_call_event(rb_trace_arg_t *trace_arg)
     }
   }
 
-  trace->method_owner_type = strdup(rb_class2name(rb_class_of(defined_class)));
+  auto type = rb_type(defined_class);
+  // TODO: Maybe we can allocate those two strings once and only free them on flush or smth
+  if(type == T_CLASS) {
+    trace->method_owner_type = strdup("Class");
+  } else
+  if(type == T_MODULE) {
+    trace->method_owner_type = strdup("Module");
+  } else {
+    rb_warn("UNEXPECTED method owner type %d", type);
+    trace->method_owner_type = strdup("Module");
+  }
+
 
   VALUE parameters = rb_tracearg_parameters(trace_arg); // We may be able to cache this for each method? or access the parsed stuff idk
   auto total_params_size = rb_array_len(parameters);
@@ -72,7 +122,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
       if(param_name_id != anonRest && param_name_id != anonKeyrest && param_name_id != anonBlock) {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-        param_class = strdup(rb_class2name(rb_class_of(value)));
+        param_class = class_to_name(rb_class_of(value));
       } else {
         param_class = nullptr;
       }
@@ -127,10 +177,10 @@ process_call_event(rb_trace_arg_t *trace_arg)
   if(stack_pair == call_stacks.end()) {
     auto stack = std::stack<ReturnTrace*>();
     stack.push(trace);
-    fprintf(stderr, "[%ld] inserting method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
+    // fprintf(stderr, "[%ld] inserting method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
     call_stacks.insert({ fiber_id, stack });
   } else {
-    fprintf(stderr, "[%ld] pushing method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
+    // fprintf(stderr, "[%ld] pushing method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
     auto& stack = (*stack_pair).second;
     stack.push(trace);
   }
@@ -172,13 +222,8 @@ process_return_event(rb_trace_arg_t* trace_arg) {
     //fprintf(stderr, "[%ld] popped method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
 
     auto return_value = rb_tracearg_return_value(trace_arg);
-    auto class_value = rb_class2name(rb_class_of(return_value));
-
-    if(!class_value) {
-      rb_warn("[%ld] Unexpected: Return value has no class for %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
-      return;
-    }
-    trace->return_type = strdup(class_value);
+    auto class_value = class_to_name(rb_class_of(return_value));
+    trace->return_type = class_value;
 
     tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
     message->queue_state = 1;
@@ -329,6 +374,7 @@ static void flush_end(VALUE arg)
   }
 
   close(socketFd);
+  fprintf(stdout, "flushed\n");
 }
 
 static VALUE flush(VALUE self)
