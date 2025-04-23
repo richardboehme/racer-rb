@@ -19,7 +19,7 @@ end
 class Foo
   module Bar
     class Baz
-      def foo(a)
+      def self.foo(a)
         A::B.new
       end
     end
@@ -29,7 +29,7 @@ end
 Racer.start_agent
 Racer.start
 
-Foo::Bar::Baz.new.foo(1)
+Foo::Bar::Baz.foo(1)
 
 
 Racer.stop

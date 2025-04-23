@@ -1,9 +1,15 @@
 class Racer::Trace
-  attr_reader :method_owner, :method_name, :return_type, :params
+  attr_reader :method_owner, :method_name, :method_kind, :return_type, :params
 
-  def initialize(method_owner:, method_name:, return_type:, params:)
+  KINDS = [
+    :instance,
+    :singleton
+  ].freeze
+
+  def initialize(method_owner:, method_name:, method_kind:, return_type:, params:)
     @method_owner = method_owner
     @method_name = method_name
+    @method_kind = method_kind
     @return_type = return_type
     @params = params
   end

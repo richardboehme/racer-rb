@@ -16,12 +16,12 @@ tp = TracePoint.new(:call) do |tp|
   ]
 end
 # tp2.enable
-require_relative "lib/racer"
-# tp.enable
+# require_relative "lib/racer"
+tp.enable
 
-Racer.start_agent
+# Racer.start_agent
 
-Racer.start
+# Racer.start
 
 class Bar
   def foo(c, d)
@@ -29,6 +29,10 @@ class Bar
 end
 
 class Foo < Bar
+  def self.foo(a)
+    a
+  end
+
   def foo(a, b)
     super
     [a, b]
@@ -37,17 +41,18 @@ end
 
 f = Foo.new
 
+Foo.foo(1)
 f.foo(1, 2)
 
-Racer.stop
+# Racer.stop
 
-Racer.start
+# Racer.start
 
-f.foo("a", "b")
+# f.foo("a", "b")
 
-# tp.disable
+# # tp.disable
 
-Racer.stop
+# Racer.stop
 
 # tp.disable
 # tp2.disable

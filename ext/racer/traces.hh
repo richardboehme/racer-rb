@@ -17,6 +17,11 @@ enum ClassType {
   CLASS = 1,
 };
 
+enum MethodKind {
+  INSTANCE = 0,
+  SINGLETON = 1,
+};
+
 typedef struct Path {
   char* name { nullptr };
   ClassType type { MODULE };
@@ -39,6 +44,7 @@ typedef struct ReturnTrace
 {
   Constant method_owner {};
   char *method_name { nullptr };
+  MethodKind method_kind { INSTANCE };
   Constant return_type {};
   // Params is an array where each even element is a parameter name
   // and the next element is the param type

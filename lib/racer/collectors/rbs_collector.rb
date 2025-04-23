@@ -16,9 +16,17 @@ module Racer::Collectors
       # TODO: We probably want to "enhance" those types (say monkey patches) but we'd at least need to copy their type params (generics)
       return if @has_types.include?(trace.method_owner.name)
 
-      @results[trace.method_owner.name][:methods][trace.method_name] ||= []
+      method_type_key =
+        case trace.method_kind
+        in :instance
+          :instance_methods
+        in :singleton
+          :singleton_methods
+        end
 
-      @results[trace.method_owner.name][:methods][trace.method_name].each do |traces|
+      @results[trace.method_owner.name][method_type_key][trace.method_name] ||= []
+
+      @results[trace.method_owner.name][method_type_key][trace.method_name].each do |traces|
         if traces.params == trace.params && traces.return_type == trace.return_type
           return
         end
@@ -30,7 +38,7 @@ module Racer::Collectors
         push_constant_to_results(param.type_name)
       end
 
-      @results[trace.method_owner.name][:methods][trace.method_name] << trace
+      @results[trace.method_owner.name][method_type_key][trace.method_name] << trace
     end
 
     def stop
@@ -39,13 +47,13 @@ module Racer::Collectors
 
       declarations =
         @results.map do |owner_name, owner|
-          owner => { methods:, type: }
+          owner => { type:, instance_methods:, singleton_methods: }
 
           case type
           when :class
-            to_class_delaration(owner_name, methods)
+            to_class_delaration(owner_name, instance_methods, singleton_methods)
           when :module
-            to_module_declaration(owner_name, methods)
+            to_module_declaration(owner_name, instance_methods, singleton_methods)
           else
             puts "Unknown owner type #{type} (#{methods})"
           end
@@ -88,20 +96,20 @@ module Racer::Collectors
           name: relative_name.to_sym,
           namespace: RBS::Namespace.new(path:, absolute: true)
         )
-      warn type_name.inspect
+
       if @environment.class_decls.key?(type_name)
         @has_types.add(name)
         return
       end
 
-      @results[name] = { type: class_type, methods: {} }
+      @results[name] = { type: class_type, instance_methods: {}, singleton_methods: {} }
     end
 
-    def to_module_declaration(owner, methods)
+    def to_module_declaration(owner, instance_methods, singleton_methods)
       RBS::AST::Declarations::Module.new(
         name: to_type_name(owner),
         type_params: [],
-        members: to_method_definitions(methods),
+        members: to_method_definitions(instance_methods, singleton_methods),
         annotations: [],
         self_types: [],
         location: nil,
@@ -109,45 +117,53 @@ module Racer::Collectors
       )
     end
 
-    def to_class_delaration(owner, methods)
+    def to_class_delaration(owner, instance_methods, singleton_methods)
       RBS::AST::Declarations::Class.new(
         name: to_type_name(owner),
         type_params: [],
         super_class: nil,
-        members: to_method_definitions(methods),
+        members: to_method_definitions(instance_methods, singleton_methods),
         annotations: [],
         location: nil,
         comment: nil
       )
     end
 
-    def to_method_definitions(methods)
-      methods.map do |name, overloads|
-        RBS::AST::Members::MethodDefinition.new(
-          name: name.to_sym,
-          kind: :instance,
-          overloads: overloads.map do |overload_trace|
-            RBS::AST::Members::MethodDefinition::Overload.new(
-              method_type: RBS::MethodType.new(
-                type_params: [],
-                type: RBS::Types::Function.new(
-                  **method_parameters(overload_trace.params),
-                  rest_positionals: nil,
-                  return_type: to_class_instance_type(overload_trace.return_type.name)
-                ),
-                block: nil,
-                location: nil
+    def to_method_definitions(instance_methods, singleton_methods)
+      instance_methods.map do |name, overloads|
+        to_method_definition(name, :instance, overloads)
+      end.concat(
+        singleton_methods.map do |name, overloads|
+          to_method_definition(name, :singleton, overloads)
+        end
+      )
+    end
+
+    def to_method_definition(name, kind, overloads)
+      RBS::AST::Members::MethodDefinition.new(
+        name: name.to_sym,
+        kind:,
+        overloads: overloads.map do |overload_trace|
+          RBS::AST::Members::MethodDefinition::Overload.new(
+            method_type: RBS::MethodType.new(
+              type_params: [],
+              type: RBS::Types::Function.new(
+                **method_parameters(overload_trace.params),
+                rest_positionals: nil,
+                return_type: to_class_instance_type(overload_trace.return_type.name)
               ),
-              annotations: []
-            )
-          end,
-          annotations: [],
-          overloading: false,
-          location: nil,
-          comment: nil,
-          visibility: nil
-        )
-      end
+              block: nil,
+              location: nil
+            ),
+            annotations: []
+          )
+        end,
+        annotations: [],
+        overloading: false,
+        location: nil,
+        comment: nil,
+        visibility: nil
+      )
     end
 
     def method_parameters(params)

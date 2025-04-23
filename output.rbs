@@ -1,11 +1,11 @@
 class ::Foo::Bar::Baz
-  def foo: (::Integer a) -> ::A::B
+  def self.foo: (::Integer a) -> ::A::B
+end
+
+module ::Foo::Bar
 end
 
 class ::Foo
-end
-
-module ::FooBar
 end
 
 class ::A::B

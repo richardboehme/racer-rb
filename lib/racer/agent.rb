@@ -75,6 +75,11 @@ class Racer::Agent
           # File.write("messages", "#{data}\n\n", mode: "a+")
 
           method_name = data.shift
+          method_kind =
+            Racer::Trace::KINDS.fetch(data.shift) do |index|
+              warn "Unexpected method kind received #{index}"
+              Racer::Trace::Param::TYPES.first
+            end
 
           return_type = shift_constant(data)
           method_owner = shift_constant(data)
@@ -86,6 +91,7 @@ class Racer::Agent
             Racer::Trace.new(
               method_owner:,
               method_name:,
+              method_kind:,
               return_type:,
               params:
             )

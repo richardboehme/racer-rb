@@ -33,7 +33,7 @@ void *init_worker(void *arg)
     // TODO: If a method has lots of parameters this buffer will not be large enough
     char buffer[1024];
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
-    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\"", trace->method_name);
+    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\",%d", trace->method_name, trace->method_kind);
     write_path(buffer, sizeof(buffer), &end, trace->return_type);
     write_path(buffer, sizeof(buffer), &end, trace->method_owner);
 
