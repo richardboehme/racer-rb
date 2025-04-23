@@ -9,8 +9,8 @@ require "drb/unix" unless Gem.win_platform?
 module Racer
   SERVER_PATH = "/tmp/racer.sock"
 
-  def self.start_agent
-    fork(&Racer::Agent.new(SERVER_PATH).method(:start))
+  def self.start_agent(collectors: [Racer::Collectors::RBSCollector.new])
+    pid = fork(&Racer::Agent.new(SERVER_PATH, collectors).method(:start))
 
     until File.exist?(SERVER_PATH)
       sleep 0.1
@@ -18,6 +18,16 @@ module Racer
 
     at_exit do
       flush
+      stop_agent(pid)
     end
+
+    pid
+  end
+
+  def self.stop_agent(pid)
+    Process.kill("HUP", pid)
+    Process.wait(pid)
+  rescue Errno::ESRCH
+    # Agent already stopped
   end
 end

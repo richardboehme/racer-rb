@@ -379,7 +379,7 @@ static VALUE stop(VALUE self)
 
 static void flush_end(VALUE arg)
 {
-  if (flushed == 1 || socketFd == -1)
+  if (flushed == 1 || socketFd <= 0)
     return;
 
   flushed = 1;

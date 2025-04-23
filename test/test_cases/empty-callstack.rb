@@ -1,7 +1,3 @@
-require "racer"
-
-Racer.start_agent
-
 def foo
   Racer.start
 end
@@ -9,3 +5,6 @@ end
 foo
 
 Racer.stop
+
+__END__
+--- []
