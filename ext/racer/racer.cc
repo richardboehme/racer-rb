@@ -16,7 +16,7 @@ static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, no
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
-static inline char*
+static inline VALUE
 class_to_name(VALUE klass) {
   auto class_name = rb_class_path_cached(rb_class_real(klass));
   if(RB_NIL_P(class_name)) {
@@ -31,22 +31,25 @@ class_to_name(VALUE klass) {
       } while(RB_NIL_P(class_name));
     } else {
       // Module
-      return strdup("Module");
+      return rb_str_new_cstr("Module");
     }
   }
 
-  if(RB_NIL_P(class_name)) {
-    auto klass_inspect = rb_inspect(klass);
-    rb_warn("UNEXPECTED CLASS NAME IS NIL (klass = %s)", StringValueCStr(klass_inspect));
-    return nullptr;
+  return class_name;
+}
+
+static ClassType
+class_type_by_constant(VALUE constant) {
+  auto type = rb_type(constant);
+
+  if(type == T_CLASS) {
+    return CLASS;
   } else
-  if(!RB_TYPE_P(class_name, T_STRING))
-  {
-    auto name = rb_class2name(rb_class_real(klass));
-    rb_warn("UNEPXETED CLASS NAME IS NOT STRING BUT KLASS: %s", name);
-    return strdup(name);
+  if(type == T_MODULE) {
+    return MODULE;
   } else {
-    return strdup(StringValueCStr(class_name));
+    rb_warn("UNEXPECTED method owner type %d", type);
+    return MODULE;
   }
 }
 
@@ -68,7 +71,35 @@ process_call_event(rb_trace_arg_t *trace_arg)
     }
   }
 
-  trace->method_owner_name = class_to_name(defined_class);
+  auto class_name = class_to_name(defined_class);
+  auto current_space = rb_cObject;
+  auto class_name_str = strdup(StringValueCStr(class_name));
+  char* occurence = class_name_str;
+  long constant_path_size = 0;
+  do {
+    occurence = strstr(occurence, "::");
+
+    char* fragment;
+    if(!occurence) break;
+
+    occurence[0] = '\0';
+    constant_path_size++;
+    occurence += 2;
+  } while(occurence != nullptr);
+
+  auto paths = new Path[constant_path_size];
+
+  for(auto i = 0; i < constant_path_size; ++i) {
+    auto fragment = strdup(class_name_str);
+
+    auto inspect = rb_inspect(current_space);
+    current_space = rb_const_get_at(current_space, rb_intern(fragment));
+    paths[i] = { fragment, class_type_by_constant(current_space) };
+
+    class_name_str += strlen(fragment) + 2;
+  }
+
+  trace->method_owner = { strdup(StringValueCStr(class_name)), class_type_by_constant(defined_class), constant_path_size, paths };
 
   long fiber_id = rb_fiber_current();
   auto stack_pair = call_stacks.find(fiber_id);
@@ -77,28 +108,14 @@ process_call_event(rb_trace_arg_t *trace_arg)
     if(!stack.empty()) {
       auto previous_trace = (*stack_pair).second.top();
       // Attempt to detect retries of a method using the `retry` keyword
-      if(previous_trace->rescued && strcmp(trace->method_name, previous_trace->method_name) == 0 && strcmp(trace->method_owner_name, previous_trace->method_owner_name) == 0) {
+      if(previous_trace->rescued && strcmp(trace->method_name, previous_trace->method_name) == 0 && strcmp(trace->method_owner.name, previous_trace->method_owner.name) == 0) {
         //fprintf(stderr, "[%ld] detected retry of method %s\n", fiber_id, trace->method_name);
         free(trace->method_name);
-        free(trace->method_owner_name);
         free(trace);
         return;
       }
     }
   }
-
-  auto type = rb_type(defined_class);
-  // TODO: Maybe we can allocate those two strings once and only free them on flush or smth
-  if(type == T_CLASS) {
-    trace->method_owner_type = strdup("Class");
-  } else
-  if(type == T_MODULE) {
-    trace->method_owner_type = strdup("Module");
-  } else {
-    rb_warn("UNEXPECTED method owner type %d", type);
-    trace->method_owner_type = strdup("Module");
-  }
-
 
   VALUE parameters = rb_tracearg_parameters(trace_arg); // We may be able to cache this for each method? or access the parsed stuff idk
   auto total_params_size = rb_array_len(parameters);
@@ -122,7 +139,8 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
       if(param_name_id != anonRest && param_name_id != anonKeyrest && param_name_id != anonBlock) {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-        param_class = class_to_name(rb_class_of(value));
+        auto class_name = class_to_name(rb_class_of(value));
+        param_class = strdup(StringValueCStr(class_name));
       } else {
         param_class = nullptr;
       }
@@ -223,7 +241,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
 
     auto return_value = rb_tracearg_return_value(trace_arg);
     auto class_value = class_to_name(rb_class_of(return_value));
-    trace->return_type = class_value;
+    trace->return_type = strdup(StringValueCStr(class_value));
 
     tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
     message->queue_state = 1;
@@ -329,10 +347,8 @@ static VALUE stop(VALUE self)
       auto trace = stack.top();
       stack.pop();
 
-      // TODO: Implement free_trace or deconstructor?
+      // TODO: Implement free_trace or deconstructor? (free method owner)
       free(trace->method_name);
-      free(trace->method_owner_name);
-      free(trace->method_owner_type);
       for(long i = 0; i < trace->params_size; ++i) {
         auto param = trace->params[i];
         if(param.class_name) {

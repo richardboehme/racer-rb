@@ -6,29 +6,35 @@ module Racer::Collectors
       @results = {}
       loader = RBS::EnvironmentLoader.new
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
+      @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
       @has_types = Set.new
+      @empty_modules = {}
     end
 
     def collect(trace)
-      return if @has_types.include?(trace.method_owner)
+      return if @has_types.include?(trace.method_owner.name)
 
       # TODO: We probably want to "enhance" those types but we'd at least need to copy their type params (generics)
-      type = RBS::TypeName.new(name: trace.method_owner.to_sym, namespace: RBS::Namespace.root)
+      type = RBS::TypeName.new(name: trace.method_owner.name.to_sym, namespace: RBS::Namespace.root)
       if @environment.class_decls.key?(type)
-        @has_types.add(trace.method_owner)
+        @has_types.add(trace.method_owner.name)
         return
       end
 
-      @results[trace.method_owner] ||= {}
-      @results[trace.method_owner][trace.method_name] ||= []
+      trace.method_owner.path.each do |fragment|
+        @results[fragment.name] ||= { type: fragment.type, methods: {} }
+      end
 
-      @results[trace.method_owner][trace.method_name].each do |traces|
+      @results[trace.method_owner.name] ||= { type: trace.method_owner.type, methods: {} }
+      @results[trace.method_owner.name][:methods][trace.method_name] ||= []
+
+      @results[trace.method_owner.name][:methods][trace.method_name].each do |traces|
         if traces.params == trace.params && traces.return_type == trace.return_type
           return
         end
       end
 
-      @results[trace.method_owner][trace.method_name] << trace
+      @results[trace.method_owner.name][:methods][trace.method_name] << trace
     end
 
     def stop
@@ -36,16 +42,14 @@ module Racer::Collectors
       writer = RBS::Writer.new(out: io)
 
       declarations =
-        @results.map do |owner, methods|
-          next if methods.empty?
-
-          type = methods.first[1].first.method_owner_type
+        @results.map do |owner_name, owner|
+          owner => { methods:, type: }
 
           case type
-          when "Class"
-            to_class_delaration(owner, methods)
-          when "Module"
-            to_module_declaration(owner, methods)
+          when :class
+            to_class_delaration(owner_name, methods)
+          when :module
+            to_module_declaration(owner_name, methods)
           else
             puts "Unknown owner type #{type} (#{methods})"
           end
@@ -93,7 +97,7 @@ module Racer::Collectors
                 type: RBS::Types::Function.new(
                   **method_parameters(overload_trace.params),
                   rest_positionals: nil,
-                  return_type: RBS::Types::ClassInstance.new(name: to_type_name(overload_trace.return_type), args: [], location: nil)
+                  return_type: to_class_instance_type(overload_trace.return_type)
                 ),
                 block: nil,
                 location: nil
@@ -124,7 +128,7 @@ module Racer::Collectors
           when :required, :optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_type_name(param.class_name),
+                type: to_class_instance_type(param.class_name),
                 name: param.name
               )
 
@@ -136,7 +140,7 @@ module Racer::Collectors
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_type_name(param.class_name),
+                type: to_class_instance_type(param.class_name),
                 name: nil
               )
 
@@ -159,7 +163,7 @@ module Racer::Collectors
 
             parameters[:rest_keywords] =
               RBS::Types::Function::Param.new(
-                type: to_type_name(type),
+                type: to_class_instance_type(type),
                 name: param.name == :** ? nil : param.name
               )
           end
@@ -169,6 +173,18 @@ module Racer::Collectors
 
     def to_type_name(type_name_str)
       RBS::TypeName.new(name: type_name_str.to_sym, namespace: RBS::Namespace.root)
+    end
+
+    def to_class_instance_type(type_name_str)
+      type_name = to_type_name(type_name_str)
+      existing_type = @environment.class_decls[type_name]
+      type_params = existing_type&.type_params || []
+
+      RBS::Types::ClassInstance.new(
+        name: type_name,
+        args: type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) },
+        location: nil
+      )
     end
   end
 end

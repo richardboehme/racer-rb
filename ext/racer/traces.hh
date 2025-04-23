@@ -12,16 +12,32 @@ enum ParamType {
   BLOCK = 6
 };
 
+enum ClassType {
+  MODULE = 0,
+  CLASS = 1,
+};
+
 typedef struct Parameter {
   char* name = nullptr;
   char* class_name = nullptr;
   ParamType type;
 } Parameter;
 
+typedef struct Path {
+  char* name;
+  ClassType type;
+} Path;
+
+typedef struct TypeName {
+  char* name;
+  ClassType type;
+  long namespace_size;
+  Path* paths;
+} TypeName;
+
 typedef struct ReturnTrace
 {
-  char *method_owner_name;
-  char *method_owner_type;
+  TypeName method_owner;
   char *method_name;
   char *return_type;
   // Params is an array where each even element is a parameter name

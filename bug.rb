@@ -11,22 +11,20 @@ TracePoint.new(:return, :call, :rescue) do |tp|
 end#.enable
 
 
-class Formatter
-  def self.call(form)
-    {}
+class Foo
+  module Bar
+    class Baz
+      def foo(a)
+        [a + 1]
+      end
+    end
   end
-end
-
-class MyForm
-
 end
 
 Racer.start_agent
 Racer.start
 
-Formatter.(MyForm.new)
-Formatter.(MyForm.new)
-Formatter.(MyForm.new)
+Foo::Bar::Baz.new.foo(1)
 
 
 Racer.stop

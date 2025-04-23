@@ -24,11 +24,18 @@ void *init_worker(void *arg)
 
     // TODO: If a method has lots of parameters this buffer will not be large enough
     char buffer[1024];
-    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\",\"%s\",\"%s\",\"%s\"", trace->method_owner_name, trace->method_owner_type, trace->method_name, trace->return_type);
+    // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
+    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\",\"%s\",\"%s\",%d,%ld", trace->method_name, trace->return_type, trace->method_owner.name, trace->method_owner.type, trace->method_owner.namespace_size);
+
+    for(long i = 0; i < trace->method_owner.namespace_size; ++i) {
+      auto path_fragment = trace->method_owner.paths[i];
+      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",%d", path_fragment.name, path_fragment.type);
+    }
+
     for (long i = 0; i < trace->params_size; ++i)
     {
       auto param = trace->params[i];
-      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",\"%s\",\"%d\"", param.name, param.class_name, param.type);
+      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",\"%s\",%d", param.name, param.class_name, param.type);
     }
     buffer[end] = ']';
     buffer[++end] = '\n';
@@ -39,8 +46,6 @@ void *init_worker(void *arg)
     }
 
     free(trace->method_name);
-    free(trace->method_owner_name);
-    free(trace->method_owner_type);
     free(trace->return_type);
     for(long i = 0; i < trace->params_size; ++i) {
       auto &param = trace->params[i];

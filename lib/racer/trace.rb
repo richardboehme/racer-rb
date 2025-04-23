@@ -1,12 +1,35 @@
 class Racer::Trace
-  attr_reader :method_owner, :method_owner_type, :method_name, :return_type, :params
+  attr_reader :method_owner, :method_name, :return_type, :params
 
-  def initialize(method_owner:, method_owner_type:, method_name:, return_type:, params:)
+  def initialize(method_owner:, method_name:, return_type:, params:)
     @method_owner = method_owner
-    @method_owner_type = method_owner_type
     @method_name = method_name
     @return_type = return_type
     @params = params
+  end
+
+  class Constant
+    attr_reader :name, :type, :path
+
+    TYPES = [
+      :module,
+      :class
+    ].freeze
+
+    def initialize(name:, type:, path:)
+      @name = name
+      @type = type
+      @path = path
+    end
+
+    class PathFragment
+      attr_reader :name, :type
+
+      def initialize(name:, type:)
+        @name = name
+        @type = type
+      end
+    end
   end
 
   class Param

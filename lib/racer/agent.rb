@@ -73,15 +73,34 @@ class Racer::Agent
           data = JSON.parse(data)
           # data = data.split(",")
           # File.write("messages", "#{data}\n\n", mode: "a+")
-          method_owner, method_owner_type, method_name, return_type, *params = data
+          method_name, return_type, method_owner_name, method_owner_type, constant_path_size, *rest = data
+
+          # Split rest to constants and params based on constant path size
+          fragment_name = nil
+          path =
+            constant_path_size.times.map do |i|
+              fragment_name =
+                if fragment_name.nil?
+                  rest.shift
+                else
+                  fragment_name = "#{fragment_name}::#{rest.shift}"
+                end
+              fragment_type = Racer::Trace::Constant::TYPES.fetch(rest.shift)
+
+              Racer::Trace::Constant::PathFragment.new(name: fragment_name, type: fragment_type)
+            end
 
           @queue.push(
             Racer::Trace.new(
-              method_owner:,
-              method_owner_type:,
+              method_owner:
+                Racer::Trace::Constant.new(
+                  name: method_owner_name,
+                  type: Racer::Trace::Constant::TYPES.fetch(method_owner_type),
+                  path:
+                ),
               method_name:,
               return_type:,
-              params: params.each_slice(3).map { build_param(*it) }
+              params: rest.each_slice(3).map { build_param(*it) }
             )
           )
         end
