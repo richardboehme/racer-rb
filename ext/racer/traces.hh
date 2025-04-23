@@ -17,34 +17,34 @@ enum ClassType {
   CLASS = 1,
 };
 
-typedef struct Parameter {
-  char* name = nullptr;
-  char* class_name = nullptr;
-  ParamType type;
-} Parameter;
-
 typedef struct Path {
-  char* name;
-  ClassType type;
+  char* name { nullptr };
+  ClassType type { MODULE };
 } Path;
 
-typedef struct TypeName {
-  char* name;
-  ClassType type;
-  long namespace_size;
-  Path* paths;
-} TypeName;
+typedef struct Constant {
+  char* name { nullptr };
+  ClassType type { MODULE };
+  long path_size { 0 };
+  Path* path { nullptr };
+} Constant;
+
+typedef struct Parameter {
+  char* name { nullptr };
+  Constant type_name {};
+  ParamType param_type { REQUIRED };
+} Parameter;
 
 typedef struct ReturnTrace
 {
-  TypeName method_owner;
-  char *method_name;
-  char *return_type;
+  Constant method_owner {};
+  char *method_name { nullptr };
+  Constant return_type {};
   // Params is an array where each even element is a parameter name
   // and the next element is the param type
-  long params_size;
-  Parameter *params;
-  bool rescued;
+  long params_size { 0 };
+  Parameter *params { nullptr };
+  bool rescued { false };
 } ReturnTrace;
 
 #endif /* TRACES_H */

@@ -1,9 +1,15 @@
+class ::Foo::Bar::Baz
+  def foo: (::Integer a) -> ::A::B
+end
+
 class ::Foo
 end
 
-module ::Foo::Bar
+module ::FooBar
 end
 
-class ::Foo::Bar::Baz
-  def foo: (::Integer a) -> ::Array[untyped]
+class ::A::B
+end
+
+class ::A
 end

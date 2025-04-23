@@ -73,34 +73,21 @@ class Racer::Agent
           data = JSON.parse(data)
           # data = data.split(",")
           # File.write("messages", "#{data}\n\n", mode: "a+")
-          method_name, return_type, method_owner_name, method_owner_type, constant_path_size, *rest = data
 
-          # Split rest to constants and params based on constant path size
-          fragment_name = nil
-          path =
-            constant_path_size.times.map do |i|
-              fragment_name =
-                if fragment_name.nil?
-                  rest.shift
-                else
-                  fragment_name = "#{fragment_name}::#{rest.shift}"
-                end
-              fragment_type = Racer::Trace::Constant::TYPES.fetch(rest.shift)
+          method_name = data.shift
 
-              Racer::Trace::Constant::PathFragment.new(name: fragment_name, type: fragment_type)
-            end
+          return_type = shift_constant(data)
+          method_owner = shift_constant(data)
+
+          params_size = data.shift
+          params = params_size.times.map { shift_param(data) }
 
           @queue.push(
             Racer::Trace.new(
-              method_owner:
-                Racer::Trace::Constant.new(
-                  name: method_owner_name,
-                  type: Racer::Trace::Constant::TYPES.fetch(method_owner_type),
-                  path:
-                ),
+              method_owner:,
               method_name:,
               return_type:,
-              params: rest.each_slice(3).map { build_param(*it) }
+              params:
             )
           )
         end
@@ -108,13 +95,36 @@ class Racer::Agent
     end
   end
 
-  def build_param(name, class_name, type)
-    type =
-      Racer::Trace::Param::TYPES.fetch(type.to_i) do |key|
-        warn "Unexpected return type received #{key}"
-        Racer::Trace::Param::TYPES.first
+  def shift_param(data)
+    name = data.shift
+    type = Racer::Trace::Param::TYPES.fetch(data.shift) do |key|
+      warn "Unexpected return type received #{key}"
+      Racer::Trace::Param::TYPES.first
+    end
+
+    type_name = shift_constant(data)
+
+    Racer::Trace::Param.new(name: name.to_sym, type_name:, type:)
+  end
+
+  def shift_constant(data)
+    name = data.shift
+    type = data.shift
+    constant_path_size = data.shift
+
+    fragment_name = nil
+    path =
+      constant_path_size.times.map do |i|
+        fragment_name = data.shift
+        fragment_type = Racer::Trace::Constant::TYPES.fetch(data.shift)
+
+        Racer::Trace::Constant::PathFragment.new(name: fragment_name.to_sym, type: fragment_type)
       end
 
-    Racer::Trace::Param.new(name: name.to_sym, class_name:, type:)
+    Racer::Trace::Constant.new(
+      name:,
+      type: Racer::Trace::Constant::TYPES.fetch(type),
+      path:
+    )
   end
 end

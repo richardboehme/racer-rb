@@ -11,11 +11,16 @@ TracePoint.new(:return, :call, :rescue) do |tp|
 end#.enable
 
 
+class A
+  class B
+  end
+end
+
 class Foo
   module Bar
     class Baz
       def foo(a)
-        [a + 1]
+        A::B.new
       end
     end
   end

@@ -30,10 +30,14 @@ class Racer::Trace
         @type = type
       end
     end
+
+    def ==(other)
+      other.name == name
+    end
   end
 
   class Param
-    attr_reader :name, :class_name, :type
+    attr_reader :name, :type_name, :type
 
     TYPES = [
       :required,
@@ -46,14 +50,14 @@ class Racer::Trace
     ].freeze
 
 
-    def initialize(name:, class_name:, type:)
+    def initialize(name:, type_name:, type:)
       @name = name
-      @class_name = class_name
+      @type_name = type_name
       @type = type
     end
 
     def ==(other)
-      other.name == name && other.class_name == class_name && other.type == type
+      other.name == name && other.type_name == type_name && other.type == type
     end
   end
 end

@@ -8,30 +8,26 @@ module Racer::Collectors
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
       @has_types = Set.new
-      @empty_modules = {}
     end
 
     def collect(trace)
+      push_constant_to_results(trace.method_owner)
+
+      # TODO: We probably want to "enhance" those types (say monkey patches) but we'd at least need to copy their type params (generics)
       return if @has_types.include?(trace.method_owner.name)
 
-      # TODO: We probably want to "enhance" those types but we'd at least need to copy their type params (generics)
-      type = RBS::TypeName.new(name: trace.method_owner.name.to_sym, namespace: RBS::Namespace.root)
-      if @environment.class_decls.key?(type)
-        @has_types.add(trace.method_owner.name)
-        return
-      end
-
-      trace.method_owner.path.each do |fragment|
-        @results[fragment.name] ||= { type: fragment.type, methods: {} }
-      end
-
-      @results[trace.method_owner.name] ||= { type: trace.method_owner.type, methods: {} }
       @results[trace.method_owner.name][:methods][trace.method_name] ||= []
 
       @results[trace.method_owner.name][:methods][trace.method_name].each do |traces|
         if traces.params == trace.params && traces.return_type == trace.return_type
           return
         end
+      end
+
+      push_constant_to_results(trace.return_type)
+
+      trace.params.each do |param|
+        push_constant_to_results(param.type_name)
       end
 
       @results[trace.method_owner.name][:methods][trace.method_name] << trace
@@ -60,6 +56,46 @@ module Racer::Collectors
     end
 
     private
+
+    def push_constant_to_results(constant)
+      path = constant.path.dup
+      push_type_to_results(constant.name, constant.type, path.map(&:name))
+
+      until path.empty?
+        absolute_name = path.map(&:name).join("::")
+        fragment = path.pop
+
+        push_type_to_results(absolute_name, fragment.type, path.map(&:name))
+      end
+    end
+
+    def push_type_to_results(name, class_type, path)
+      return if @results.key?(name)
+      return if @has_types.include?(name)
+
+      # TODO: Should we refactor this to store the relative name at the Constant class?
+      # We also need the absolute path though to check in the maps above
+      start_index = name.rindex(":")
+      if start_index.nil?
+        start_index = 0
+      else
+        start_index += 1
+      end
+
+      relative_name = name[start_index..]
+      type_name =
+        RBS::TypeName.new(
+          name: relative_name.to_sym,
+          namespace: RBS::Namespace.new(path:, absolute: true)
+        )
+      warn type_name.inspect
+      if @environment.class_decls.key?(type_name)
+        @has_types.add(name)
+        return
+      end
+
+      @results[name] = { type: class_type, methods: {} }
+    end
 
     def to_module_declaration(owner, methods)
       RBS::AST::Declarations::Module.new(
@@ -97,7 +133,7 @@ module Racer::Collectors
                 type: RBS::Types::Function.new(
                   **method_parameters(overload_trace.params),
                   rest_positionals: nil,
-                  return_type: to_class_instance_type(overload_trace.return_type)
+                  return_type: to_class_instance_type(overload_trace.return_type.name)
                 ),
                 block: nil,
                 location: nil
@@ -128,7 +164,7 @@ module Racer::Collectors
           when :required, :optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.class_name),
+                type: to_class_instance_type(param.type_name.name),
                 name: param.name
               )
 
@@ -140,7 +176,7 @@ module Racer::Collectors
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.class_name),
+                type: to_class_instance_type(param.type_name.name),
                 name: nil
               )
 
@@ -150,16 +186,7 @@ module Racer::Collectors
               parameters[:optional_keywords][param.name] = rbs_param
             end
           when :keyword_rest
-            type =
-              if param.class_name == "(null)"
-                if param.name == :**
-                  "Hash"
-                else
-                  ""
-                end
-              else
-                param.class_name
-              end
+            type = param.type_name.name
 
             parameters[:rest_keywords] =
               RBS::Types::Function::Param.new(

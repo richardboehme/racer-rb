@@ -2,6 +2,14 @@
 #include "unistd.h"
 #include <sys/socket.h>
 
+void write_path(char* buffer, long buffer_size, int* end, Constant& constant) {
+  *end += snprintf(buffer + *end, buffer_size - *end, ",\"%s\",%d,%ld", constant.name, constant.type, constant.path_size);
+  for(auto i = 0; i < constant.path_size; ++i) {
+    auto path_fragment = constant.path[i];
+    *end += snprintf(buffer + *end, buffer_size - *end, ",\"%s\",%d", path_fragment.name, path_fragment.type);
+  }
+}
+
 void *init_worker(void *arg)
 {
   auto *worker_data = static_cast<WorkerData *>(arg);
@@ -25,17 +33,18 @@ void *init_worker(void *arg)
     // TODO: If a method has lots of parameters this buffer will not be large enough
     char buffer[1024];
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
-    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\",\"%s\",\"%s\",%d,%ld", trace->method_name, trace->return_type, trace->method_owner.name, trace->method_owner.type, trace->method_owner.namespace_size);
+    auto end = snprintf(buffer, sizeof(buffer), "[\"%s\"", trace->method_name);
+    write_path(buffer, sizeof(buffer), &end, trace->return_type);
+    write_path(buffer, sizeof(buffer), &end, trace->method_owner);
 
-    for(long i = 0; i < trace->method_owner.namespace_size; ++i) {
-      auto path_fragment = trace->method_owner.paths[i];
-      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",%d", path_fragment.name, path_fragment.type);
-    }
+    end += snprintf(buffer + end, sizeof(buffer) - end, ",%ld", trace->params_size);
 
     for (long i = 0; i < trace->params_size; ++i)
     {
       auto param = trace->params[i];
-      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",\"%s\",%d", param.name, param.class_name, param.type);
+      end += snprintf(buffer + end, sizeof(buffer) - end, ",\"%s\",%d", param.name, param.param_type);
+
+      write_path(buffer, sizeof(buffer), &end, param.type_name);
     }
     buffer[end] = ']';
     buffer[++end] = '\n';
@@ -46,14 +55,14 @@ void *init_worker(void *arg)
     }
 
     free(trace->method_name);
-    free(trace->return_type);
-    for(long i = 0; i < trace->params_size; ++i) {
-      auto &param = trace->params[i];
-      if(param.class_name) {
-        free(param.class_name);
-      }
-      free(param.name);
-    }
+    // free(trace->return_type);
+    // for(long i = 0; i < trace->params_size; ++i) {
+    //   auto &param = trace->params[i];
+    //   if(param.class_name) {
+    //     free(param.class_name);
+    //   }
+    //   free(param.name);
+    // }
     free(trace);
     free(message);
   }

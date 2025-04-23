@@ -16,7 +16,7 @@ static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, no
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
-static inline VALUE
+static VALUE
 class_to_name(VALUE klass) {
   auto class_name = rb_class_path_cached(rb_class_real(klass));
   if(RB_NIL_P(class_name)) {
@@ -53,25 +53,9 @@ class_type_by_constant(VALUE constant) {
   }
 }
 
-static void
-process_call_event(rb_trace_arg_t *trace_arg)
-{
-  ReturnTrace *trace = (struct ReturnTrace *)malloc(sizeof(struct ReturnTrace));
-  trace->rescued = false;
-
-  trace->method_name = strdup(rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
-
-  VALUE defined_class = rb_tracearg_defined_class(trace_arg);
-  if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
-    VALUE tmp_defined_class = rb_class_attached_object(defined_class);
-    if(RB_TYPE_P(tmp_defined_class, T_CLASS)) {
-      defined_class = tmp_defined_class;
-    } else {
-      // TODO: Check these cases....
-    }
-  }
-
-  auto class_name = class_to_name(defined_class);
+static Constant
+class_to_constant(VALUE klass) {
+  auto class_name = class_to_name(klass);
   auto current_space = rb_cObject;
   auto class_name_str = strdup(StringValueCStr(class_name));
   char* occurence = class_name_str;
@@ -92,14 +76,34 @@ process_call_event(rb_trace_arg_t *trace_arg)
   for(auto i = 0; i < constant_path_size; ++i) {
     auto fragment = strdup(class_name_str);
 
-    auto inspect = rb_inspect(current_space);
     current_space = rb_const_get_at(current_space, rb_intern(fragment));
     paths[i] = { fragment, class_type_by_constant(current_space) };
 
     class_name_str += strlen(fragment) + 2;
   }
 
-  trace->method_owner = { strdup(StringValueCStr(class_name)), class_type_by_constant(defined_class), constant_path_size, paths };
+  return { strdup(StringValueCStr(class_name)), class_type_by_constant(klass), constant_path_size, paths };
+}
+
+static void
+process_call_event(rb_trace_arg_t *trace_arg)
+{
+  ReturnTrace *trace = (struct ReturnTrace *)malloc(sizeof(struct ReturnTrace));
+  trace->rescued = false;
+
+  trace->method_name = strdup(rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+
+  VALUE defined_class = rb_tracearg_defined_class(trace_arg);
+  if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
+    VALUE tmp_defined_class = rb_class_attached_object(defined_class);
+    if(RB_TYPE_P(tmp_defined_class, T_CLASS)) {
+      defined_class = tmp_defined_class;
+    } else {
+      // TODO: Check these cases....
+    }
+  }
+
+  trace->method_owner = class_to_constant(defined_class);
 
   long fiber_id = rb_fiber_current();
   auto stack_pair = call_stacks.find(fiber_id);
@@ -135,14 +139,19 @@ process_call_event(rb_trace_arg_t *trace_arg)
     {
       auto param_name_id = rb_sym2id(name);
       char *param_name = strdup(rb_id2name(SYM2ID(name)));
-      char *param_class;
+      VALUE param_class;
 
-      if(param_name_id != anonRest && param_name_id != anonKeyrest && param_name_id != anonBlock) {
-        VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-        auto class_name = class_to_name(rb_class_of(value));
-        param_class = strdup(StringValueCStr(class_name));
+      if(param_name_id == anonRest) {
+        param_class = rb_cArray;
+      } else
+      if(param_name_id == anonKeyrest) {
+        param_class = rb_cHash;
+      } else
+      if(param_name_id == anonBlock) {
+        param_class = rb_cProc;
       } else {
-        param_class = nullptr;
+        VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
+        param_class = rb_class_of(value);
       }
 
       ParamType type;
@@ -171,7 +180,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
         continue;
       }
 
-      trace->params[trace->params_size] = { param_name, param_class, type };
+      trace->params[trace->params_size] = { param_name, class_to_constant(param_class), type };
       trace->params_size++;
     } else {
       if(param_type == nokeyParam) {
@@ -240,8 +249,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
     //fprintf(stderr, "[%ld] popped method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
 
     auto return_value = rb_tracearg_return_value(trace_arg);
-    auto class_value = class_to_name(rb_class_of(return_value));
-    trace->return_type = strdup(StringValueCStr(class_value));
+    trace->return_type = class_to_constant(rb_class_of(return_value));
 
     tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
     message->queue_state = 1;
@@ -351,9 +359,9 @@ static VALUE stop(VALUE self)
       free(trace->method_name);
       for(long i = 0; i < trace->params_size; ++i) {
         auto param = trace->params[i];
-        if(param.class_name) {
-          free(param.class_name);
-        }
+        // if(param.class_name) {
+        //   free(param.class_name);
+        // }
         free(param.name);
       }
 
