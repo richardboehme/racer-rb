@@ -41,8 +41,8 @@ module Racer::Collectors
       @results[trace.method_owner.name][method_type_key][trace.method_name] << trace
     end
 
-    def stop
-      io = File.open("output.rbs", "w")
+    def stop(path: "output.rbs")
+      io = File.open(path, "w")
       writer = RBS::Writer.new(out: io)
 
       declarations =
@@ -55,7 +55,7 @@ module Racer::Collectors
           when :module
             to_module_declaration(owner_name, instance_methods, singleton_methods)
           else
-            puts "Unknown owner type #{type} (#{methods})"
+            puts "Unknown owner type #{type} (#{instance_methods}, #{singleton_methods})"
           end
         end
 

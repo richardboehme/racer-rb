@@ -35,6 +35,7 @@ nilkey(3)
 
 # RACER-TODO: This reports as 0 arguments
 # arr_params([2, 3])
+# RACER-TODO: Should we type **nil?
 
 Racer.stop
 

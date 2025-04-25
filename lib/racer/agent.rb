@@ -21,7 +21,6 @@ class Racer::Agent
       Thread.new do
         while (trace = @queue.pop) do
           @collectors.each do |collector|
-            puts "collecting #{trace} to #{collector}"
             collector.collect(trace)
           end
         end

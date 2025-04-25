@@ -1,0 +1,5 @@
+class ::RBSCollectorTest
+  def foo: (::NilClass a, ?::NilClass b, c: ::NilClass, ?d: ::NilClass, **::Hash[untyped, untyped] options) -> ::NilClass
+
+  def bar: (**::Hash[untyped, untyped]) -> ::NilClass
+end
