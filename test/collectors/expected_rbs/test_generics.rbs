@@ -1,0 +1,18 @@
+class ::RBSCollectorTest
+  def foo: (::Array[::String | ::Integer] a, ::Hash[::Symbol | ::String, ::Float | ::Regexp] b, **::Hash[::Symbol, ::RBSCollectorTest::A::B::C::D | ::RBSCollectorTest::A::B::C::E] options) -> ::Hash[::Symbol | ::RBSCollectorTest::A::B, ::String]
+end
+
+class ::RBSCollectorTest::A::B
+end
+
+module ::RBSCollectorTest::A
+end
+
+class ::RBSCollectorTest::A::B::C::D
+end
+
+module ::RBSCollectorTest::A::B::C
+end
+
+module ::RBSCollectorTest::A::B::C::E
+end

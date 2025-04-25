@@ -29,7 +29,7 @@ end
 Racer.start_agent
 Racer.start
 
-Foo::Bar::Baz.foo(1)
+Foo::Bar::Baz.foo({ a: 1, b: 2, c: "3", "4" => 5, 6 => 7 })
 
 
 Racer.stop

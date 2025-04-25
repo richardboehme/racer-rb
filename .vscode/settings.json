@@ -8,6 +8,20 @@
     "vm.h": "c",
     "cstdlib": "cpp",
     "unordered_map": "cpp",
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "set": "cpp",
+    "*.tcc": "cpp",
+    "deque": "cpp",
+    "string": "cpp",
+    "unordered_set": "cpp",
+    "vector": "cpp",
+    "ostream": "cpp",
+    "array": "cpp",
+    "iterator": "cpp",
+    "string_view": "cpp",
+    "algorithm": "cpp",
+    "memory": "cpp",
+    "initializer_list": "cpp",
+    "numeric": "cpp"
   }
 }

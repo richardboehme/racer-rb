@@ -15,17 +15,18 @@ class Racer::Trace
   end
 
   class Constant
-    attr_reader :name, :type, :path
+    attr_reader :name, :type, :path, :generic_arguments
 
     TYPES = [
       :module,
       :class
     ].freeze
 
-    def initialize(name:, type:, path:)
+    def initialize(name:, type:, path:, generic_arguments: [])
       @name = name
       @type = type
       @path = path
+      @generic_arguments = generic_arguments
     end
 
     class PathFragment

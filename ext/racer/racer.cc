@@ -3,6 +3,8 @@
 #include <sys/un.h>
 #include <unordered_map>
 #include <stack>
+#include <unordered_set>
+#include <vector>
 
 #define DEBUG 0
 #define debug_warn(fmt, ...) \
@@ -58,7 +60,7 @@ class_type_by_constant(VALUE constant) {
 }
 
 static Constant
-class_to_constant(VALUE klass) {
+class_to_constant(VALUE klass, unsigned char generic_argument_size = 0, GenericArgument* generic_arguments = nullptr) {
   auto class_name = class_to_name(klass);
   auto current_space = rb_cObject;
   auto class_name_str = strdup(StringValueCStr(class_name));
@@ -86,7 +88,26 @@ class_to_constant(VALUE klass) {
     class_name_str += strlen(fragment) + 2;
   }
 
-  return { strdup(StringValueCStr(class_name)), class_type_by_constant(klass), constant_path_size, paths };
+  return { strdup(StringValueCStr(class_name)), class_type_by_constant(klass), constant_path_size, paths, generic_argument_size, generic_arguments };
+}
+
+static GenericArgument
+generic_argument_from_union_types(std::vector<VALUE>& types) {
+  auto union_size = types.size();
+  Constant* union_types = new Constant[union_size];
+
+  for(size_t i = 0; i < union_size; ++i) {
+    union_types[i] = class_to_constant(types.at(i));
+  }
+
+  return { union_size, union_types };
+}
+
+static int
+hash_to_key_and_value_types(VALUE key, VALUE value, VALUE ary) {
+  rb_ary_push(ary, rb_class_of(key));
+  rb_ary_push(ary, rb_class_of(value));
+  return ST_CONTINUE;
 }
 
 static void
@@ -148,6 +169,9 @@ process_call_event(rb_trace_arg_t *trace_arg)
       char *param_name = strdup(rb_id2name(SYM2ID(name)));
       VALUE param_class;
 
+      unsigned char generic_argument_size = 0;
+      GenericArgument* generic_arguments = nullptr;
+
       if(param_name_id == anonRest) {
         param_class = rb_cArray;
       } else
@@ -159,6 +183,60 @@ process_call_event(rb_trace_arg_t *trace_arg)
       } else {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
         param_class = rb_class_of(value);
+
+        if (param_class == rb_cArray) {
+          generic_argument_size = 1;
+          // We need to use a set and a vector to preserve order of the union types
+          std::unordered_set<VALUE> types = {};
+          std::vector<VALUE> types_vec = {};
+          auto ary_ptr = RARRAY_CONST_PTR(value);
+          // This is O(n) and thus could be pretty slow
+          for(auto j = 0; j < rb_array_len(value); ++j) {
+            auto item = ary_ptr[j];
+
+            auto klass = rb_class_of(item);
+            auto result = types.insert(klass);
+            if(result.second) {
+              types_vec.push_back(klass);
+            }
+          }
+
+          generic_arguments = new GenericArgument[1];
+          generic_arguments[0] = generic_argument_from_union_types(types_vec);
+        } else
+        if(param_class == rb_cHash) {
+          // RACER-TODO: I think we can optimize this, if the parameter is a keyword argument rest because
+          // keys of those must be symbols, right?
+          generic_argument_size = 2;
+          std::unordered_set<VALUE> key_types = {};
+          std::vector<VALUE> key_types_vec = {};
+          std::unordered_set<VALUE> value_types = {};
+          std::vector<VALUE> value_types_vec = {};
+
+          auto hash_size = RHASH_SIZE(value);
+          VALUE key_and_value_types = rb_ary_new_capa(hash_size * 2);
+          rb_hash_foreach(value, hash_to_key_and_value_types, key_and_value_types);
+          auto ary_ptr = RARRAY_CONST_PTR(key_and_value_types);
+
+          // This is O(2n) and thus could be pretty slow
+          for(auto j = 0; j < hash_size; ++j) {
+            auto key_type = ary_ptr[j * 2];
+            auto key_result = key_types.insert(key_type);
+            if(key_result.second) {
+              key_types_vec.push_back(key_type);
+            }
+
+            auto value_type = ary_ptr[j * 2 + 1];
+            auto value_result = value_types.insert(value_type);
+            if(value_result.second) {
+              value_types_vec.push_back(value_type);
+            }
+          }
+
+          generic_arguments = new GenericArgument[2];
+          generic_arguments[0] = generic_argument_from_union_types(key_types_vec);
+          generic_arguments[1] = generic_argument_from_union_types(value_types_vec);
+        }
       }
 
       ParamType type;
@@ -187,7 +265,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
         continue;
       }
 
-      trace->params[trace->params_size] = { param_name, class_to_constant(param_class), type };
+      trace->params[trace->params_size] = { param_name, class_to_constant(param_class, generic_argument_size, generic_arguments), type };
       trace->params_size++;
     } else {
       if(param_type == nokeyParam) {
@@ -336,6 +414,9 @@ static VALUE start(VALUE self)
 
   if (connect(socketFd, (struct sockaddr*) &sockaddr, sizeof(sockaddr)) < 0) {
     perror("connect");
+    // This ensures that we can still flush, even if the socket connection did not work out.
+    // We may want to add more sophisticated error handling.
+    socketFd = 0;
     return Qnil;
   }
 

@@ -1,0 +1,15 @@
+class ::Foo::Bar::Baz
+  def self.foo: (::Hash[::Integer | ::String | ::Symbol, ::String | ::Integer] a) -> ::A::B
+end
+
+module ::Foo::Bar
+end
+
+class ::Foo
+end
+
+class ::A::B
+end
+
+class ::A
+end

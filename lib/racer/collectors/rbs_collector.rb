@@ -75,6 +75,12 @@ module Racer::Collectors
 
         push_type_to_results(absolute_name, fragment.type, path.map(&:name))
       end
+
+      constant.generic_arguments.each do |argument|
+        argument.each do |type|
+          push_constant_to_results(type)
+        end
+      end
     end
 
     def push_type_to_results(name, class_type, path)
@@ -151,7 +157,7 @@ module Racer::Collectors
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(overload_trace.params),
-                return_type: to_class_instance_type(overload_trace.return_type.name)
+                return_type: to_class_instance_type(overload_trace.return_type)
               ),
               block: block_param ? to_block(block_param) : nil,
               location: nil
@@ -182,7 +188,7 @@ module Racer::Collectors
           when :required, :optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name.name),
+                type: to_class_instance_type(param.type_name),
                 name: param.name
               )
 
@@ -196,17 +202,15 @@ module Racer::Collectors
               parameters[:optional_positionals] << rbs_param
             end
           when :rest
-            type = param.type_name.name
-
             parameters[:rest_positionals] =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(type),
+                type: to_class_instance_type(param.type_name),
                 name: param.name == :* ? nil : param.name
               )
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name.name),
+                type: to_class_instance_type(param.type_name),
                 name: nil
               )
 
@@ -216,11 +220,9 @@ module Racer::Collectors
               parameters[:optional_keywords][param.name] = rbs_param
             end
           when :keyword_rest
-            type = param.type_name.name
-
             parameters[:rest_keywords] =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(type),
+                type: to_class_instance_type(param.type_name),
                 name: param.name == :** ? nil : param.name
               )
           end
@@ -239,14 +241,23 @@ module Racer::Collectors
       RBS::TypeName.new(name: type_name_str.to_sym, namespace: RBS::Namespace.root)
     end
 
-    def to_class_instance_type(type_name_str)
-      type_name = to_type_name(type_name_str)
+    def to_class_instance_type(constant)
+      type_name = to_type_name(constant.name)
       existing_type = @environment.class_decls[type_name]
       type_params = existing_type&.type_params || []
 
+      args =
+        if constant.generic_arguments.size == type_params.size
+          constant.generic_arguments.map do |union_types|
+            RBS::Types::Union.new(types: union_types.map { |type| to_class_instance_type(type) }, location: nil)
+          end
+        else
+          type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
+        end
+
       RBS::Types::ClassInstance.new(
         name: type_name,
-        args: type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) },
+        args:,
         location: nil
       )
     end

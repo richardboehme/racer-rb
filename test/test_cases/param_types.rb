@@ -46,12 +46,14 @@ __END__
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: foo
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :required_pos
@@ -59,6 +61,7 @@ __END__
       name: Integer
       type: :class
       path: []
+      generic_arguments: []
     type: :required
   - !ruby/object:Racer::Trace::Param
     name: :optional_pos
@@ -66,6 +69,7 @@ __END__
       name: NilClass
       type: :class
       path: []
+      generic_arguments: []
     type: :optional
   - !ruby/object:Racer::Trace::Param
     name: :args
@@ -73,6 +77,12 @@ __END__
       name: Array
       type: :class
       path: []
+      generic_arguments:
+      - - !ruby/object:Racer::Trace::Constant
+          name: String
+          type: :class
+          path: []
+          generic_arguments: []
     type: :rest
   - !ruby/object:Racer::Trace::Param
     name: :required_kw
@@ -80,6 +90,7 @@ __END__
       name: Integer
       type: :class
       path: []
+      generic_arguments: []
     type: :keyword_required
   - !ruby/object:Racer::Trace::Param
     name: :optional_kw
@@ -87,6 +98,7 @@ __END__
       name: Symbol
       type: :class
       path: []
+      generic_arguments: []
     type: :keyword_optional
   - !ruby/object:Racer::Trace::Param
     name: :other_kwargs
@@ -94,6 +106,22 @@ __END__
       name: Hash
       type: :class
       path: []
+      generic_arguments:
+      - - !ruby/object:Racer::Trace::Constant
+          name: Symbol
+          type: :class
+          path: []
+          generic_arguments: []
+      - - !ruby/object:Racer::Trace::Constant
+          name: Symbol
+          type: :class
+          path: []
+          generic_arguments: []
+        - !ruby/object:Racer::Trace::Constant
+          name: Regexp
+          type: :class
+          path: []
+          generic_arguments: []
     type: :keyword_rest
   - !ruby/object:Racer::Trace::Param
     name: :block
@@ -101,18 +129,21 @@ __END__
       name: Proc
       type: :class
       path: []
+      generic_arguments: []
     type: :block
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: bar
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
@@ -120,6 +151,7 @@ __END__
       name: Integer
       type: :class
       path: []
+      generic_arguments: []
     type: :required
   - !ruby/object:Racer::Trace::Param
     name: :rest
@@ -127,6 +159,12 @@ __END__
       name: Array
       type: :class
       path: []
+      generic_arguments:
+      - - !ruby/object:Racer::Trace::Constant
+          name: Integer
+          type: :class
+          path: []
+          generic_arguments: []
     type: :rest
   - !ruby/object:Racer::Trace::Param
     name: :b
@@ -134,18 +172,21 @@ __END__
       name: String
       type: :class
       path: []
+      generic_arguments: []
     type: :required
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: anon
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :*
@@ -153,6 +194,7 @@ __END__
       name: Array
       type: :class
       path: []
+      generic_arguments: []
     type: :rest
   - !ruby/object:Racer::Trace::Param
     name: :**
@@ -160,6 +202,7 @@ __END__
       name: Hash
       type: :class
       path: []
+      generic_arguments: []
     type: :keyword_rest
   - !ruby/object:Racer::Trace::Param
     name: :&
@@ -167,18 +210,21 @@ __END__
       name: Proc
       type: :class
       path: []
+      generic_arguments: []
     type: :block
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: baz
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :*
@@ -186,6 +232,7 @@ __END__
       name: Array
       type: :class
       path: []
+      generic_arguments: []
     type: :rest
   - !ruby/object:Racer::Trace::Param
     name: :**
@@ -193,6 +240,7 @@ __END__
       name: Hash
       type: :class
       path: []
+      generic_arguments: []
     type: :keyword_rest
   - !ruby/object:Racer::Trace::Param
     name: :&
@@ -200,18 +248,21 @@ __END__
       name: Proc
       type: :class
       path: []
+      generic_arguments: []
     type: :block
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: nilkey
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
@@ -219,4 +270,5 @@ __END__
       name: Integer
       type: :class
       path: []
+      generic_arguments: []
     type: :required

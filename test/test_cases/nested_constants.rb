@@ -25,6 +25,7 @@ __END__
     - !ruby/object:Racer::Trace::Constant::PathFragment
       name: :B
       type: :class
+    generic_arguments: []
   method_name: foo
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
@@ -37,6 +38,7 @@ __END__
     - !ruby/object:Racer::Trace::Constant::PathFragment
       name: :B
       type: :class
+    generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
@@ -50,4 +52,5 @@ __END__
       - !ruby/object:Racer::Trace::Constant::PathFragment
         name: :B
         type: :class
+      generic_arguments: []
     type: :required

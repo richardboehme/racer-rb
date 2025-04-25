@@ -92,6 +92,25 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_generics
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(
+        name: :foo,
+        params: [
+          { name: :a, klass: Array, generic_arguments: [[to_constant(String), to_constant(Integer)]], type: :required },
+          { name: :b, klass: Hash, generic_arguments: [[to_constant(Symbol), to_constant(String)], [to_constant(Float), to_constant(Regexp)]], type: :required },
+          { name: :options, klass: Hash, generic_arguments: [[to_constant(Symbol)], [to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :keyword_rest }
+        ],
+        return_type: Hash,
+        return_type_generic_arguments: [[to_constant(Symbol), to_constant(A::B)], [to_constant(String)]]
+      )
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   def test_namespaces
     collector = Racer::Collectors::RBSCollector.new
 
@@ -151,17 +170,17 @@ class RBSCollectorTest < Minitest::Test
     end
   end
 
-  def trace(name:, return_type: NilClass, owner: RBSCollectorTest, kind: :instance, params: [])
+  def trace(name:, return_type: NilClass, return_type_generic_arguments: [], owner: RBSCollectorTest, kind: :instance, params: [])
     Racer::Trace.new(
       method_owner: to_constant(owner),
       method_name: name,
       method_kind: kind,
-      return_type: to_constant(return_type),
+      return_type: to_constant(return_type, generic_arguments: return_type_generic_arguments),
       params: params.map { to_param(**it) }
     )
   end
 
-  def to_constant(klass)
+  def to_constant(klass, generic_arguments: [])
     Racer::Trace::Constant.new(
       name: klass.name,
       type: klass.is_a?(Class) ? :class : :module,
@@ -171,14 +190,15 @@ class RBSCollectorTest < Minitest::Test
           name: fragment_name.to_sym,
           type: Object.const_get(current_path).is_a?(Class) ? :class : :module
         )
-      end
+      end,
+      generic_arguments:
     )
   end
 
-  def to_param(name:, klass: NilClass, type:)
+  def to_param(name:, klass: NilClass, generic_arguments: [], type:)
     Racer::Trace::Param.new(
       name:,
-      type_name: to_constant(klass),
+      type_name: to_constant(klass, generic_arguments:),
       type:
     )
   end

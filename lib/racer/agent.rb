@@ -131,17 +131,28 @@ class Racer::Agent
 
     fragment_name = nil
     path =
-      constant_path_size.times.map do |i|
+      constant_path_size.times.map do
         fragment_name = data.shift
         fragment_type = Racer::Trace::Constant::TYPES.fetch(data.shift)
 
         Racer::Trace::Constant::PathFragment.new(name: fragment_name.to_sym, type: fragment_type)
       end
 
+    generic_argument_count = data.shift
+    generic_arguments =
+      generic_argument_count.times.map do
+        union_size = data.shift
+
+        union_size.times.map do
+          shift_constant(data)
+        end
+      end
+
     Racer::Trace::Constant.new(
       name:,
       type: Racer::Trace::Constant::TYPES.fetch(type),
-      path:
+      path:,
+      generic_arguments:
     )
   end
 end

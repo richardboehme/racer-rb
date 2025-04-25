@@ -19,10 +19,12 @@ __END__
     name: Object
     type: :class
     path: []
+    generic_arguments: []
   method_name: foo
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
     path: []
+    generic_arguments: []
   params: []

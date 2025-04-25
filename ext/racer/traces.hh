@@ -27,12 +27,21 @@ typedef struct Path {
   ClassType type { MODULE };
 } Path;
 
+typedef struct GenericArgument GenericArgument;
+
 typedef struct Constant {
   char* name { nullptr };
   ClassType type { MODULE };
   long path_size { 0 };
   Path* path { nullptr };
+  unsigned char generic_argument_count { 0 };
+  GenericArgument* generic_arguments { nullptr };
 } Constant;
+
+struct GenericArgument {
+  unsigned long union_size { 0 };
+  Constant* union_types { nullptr };
+};
 
 typedef struct Parameter {
   char* name { nullptr };
