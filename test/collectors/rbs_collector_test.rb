@@ -67,7 +67,6 @@ class RBSCollectorTest < Minitest::Test
   def test_params
     collector = Racer::Collectors::RBSCollector.new
 
-    # RACER-TODO: Params of type :rest are not added
     # RACER-TODO: Blocks are not added
     [
       trace(name: :foo, params: [
@@ -84,6 +83,11 @@ class RBSCollectorTest < Minitest::Test
         { name: :**, klass: Hash, type: :keyword_rest },
         { name: :&, klass: Proc, type: :block }
       ]),
+      trace(name: :baz, params: [
+        { name: :a, type: :required },
+        { name: :args, klass: Array, type: :rest },
+        { name: :b, type: :required }
+      ])
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)

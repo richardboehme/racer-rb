@@ -70,8 +70,6 @@ class TestRacer < Minitest::Test
       file.write(code)
       file.close
 
-      File.write("foo", code)
-
       _stdout_s, stderr_s, status = Open3.capture3("bundle exec #{Gem.ruby} #{file.path}")
 
       unless stderr_s.empty?

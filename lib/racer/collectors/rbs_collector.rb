@@ -149,7 +149,6 @@ module Racer::Collectors
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(overload_trace.params),
-                rest_positionals: nil,
                 return_type: to_class_instance_type(overload_trace.return_type.name)
               ),
               block: nil,
@@ -171,6 +170,7 @@ module Racer::Collectors
         required_positionals: [],
         optional_positionals: [],
         trailing_positionals: [],
+        rest_positionals: nil,
         required_keywords: {},
         optional_keywords: {},
         rest_keywords: nil
@@ -185,10 +185,22 @@ module Racer::Collectors
               )
 
             if param.type == :required
-              parameters[:required_positionals] << rbs_param
+              if parameters[:rest_positionals]
+                parameters[:trailing_positionals] << rbs_param
+              else
+                parameters[:required_positionals] << rbs_param
+              end
             else
               parameters[:optional_positionals] << rbs_param
             end
+          when :rest
+            type = param.type_name.name
+
+            parameters[:rest_positionals] =
+              RBS::Types::Function::Param.new(
+                type: to_class_instance_type(type),
+                name: param.name == :* ? nil : param.name
+              )
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
