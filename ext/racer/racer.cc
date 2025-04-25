@@ -101,11 +101,12 @@ process_call_event(rb_trace_arg_t *trace_arg)
   VALUE defined_class = rb_tracearg_defined_class(trace_arg);
   if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
     VALUE tmp_defined_class = rb_class_attached_object(defined_class);
-    if(RB_TYPE_P(tmp_defined_class, T_CLASS)) {
+    auto type = rb_type(tmp_defined_class);
+    if (type == T_MODULE || type == T_CLASS) {
       defined_class = tmp_defined_class;
       trace->method_kind = SINGLETON;
     } else {
-      // TODO: Check these cases....
+      // TODO: Check if these cases can still happen or if we can safe the check before
     }
   }
 

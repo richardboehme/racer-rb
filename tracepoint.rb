@@ -39,10 +39,17 @@ class Foo < Bar
   end
 end
 
-f = Foo.new
+# f = Foo.new
 
-Foo.foo(1)
-f.foo(1, 2)
+# Foo.foo(1)
+# f.foo(1, 2)
+
+module A
+  def self.foo
+  end
+end
+A.foo
+
 
 # Racer.stop
 
