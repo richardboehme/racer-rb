@@ -67,7 +67,6 @@ class RBSCollectorTest < Minitest::Test
   def test_params
     collector = Racer::Collectors::RBSCollector.new
 
-    # RACER-TODO: Blocks are not added
     [
       trace(name: :foo, params: [
         { name: :a, type: :required },

@@ -144,6 +144,8 @@ module Racer::Collectors
         name: name.to_sym,
         kind:,
         overloads: overloads.map do |overload_trace|
+          block_param = overload_trace.params.find { it.type == :block }
+
           RBS::AST::Members::MethodDefinition::Overload.new(
             method_type: RBS::MethodType.new(
               type_params: [],
@@ -151,7 +153,7 @@ module Racer::Collectors
                 **method_parameters(overload_trace.params),
                 return_type: to_class_instance_type(overload_trace.return_type.name)
               ),
-              block: nil,
+              block: block_param ? to_block(block_param) : nil,
               location: nil
             ),
             annotations: []
@@ -224,6 +226,13 @@ module Racer::Collectors
           end
         end
       end
+    end
+
+    def to_block(block_param)
+      RBS::Types::Block.new(
+        type: RBS::Types::UntypedFunction.new(return_type: RBS::Types::Bases::Any.new(location: nil)),
+        required: true
+      )
     end
 
     def to_type_name(type_name_str)

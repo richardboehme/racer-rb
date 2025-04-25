@@ -1,7 +1,7 @@
 class ::RBSCollectorTest
-  def foo: (::NilClass a, ?::NilClass b, *::Array[untyped] args, c: ::NilClass, ?d: ::NilClass, **::Hash[untyped, untyped] options) -> ::NilClass
+  def foo: (::NilClass a, ?::NilClass b, *::Array[untyped] args, c: ::NilClass, ?d: ::NilClass, **::Hash[untyped, untyped] options) { (?) -> untyped } -> ::NilClass
 
-  def bar: (*::Array[untyped], **::Hash[untyped, untyped]) -> ::NilClass
+  def bar: (*::Array[untyped], **::Hash[untyped, untyped]) { (?) -> untyped } -> ::NilClass
 
   def baz: (::NilClass a, *::Array[untyped] args, ::NilClass b) -> ::NilClass
 end
