@@ -26,6 +26,7 @@ class TestRacer < Minitest::Test
           unless defined?(DATA)
             if #{write}
               File.write("#{test_case}", "__END__\\n\#{expected}", mode: "a")
+              $stderr.puts("Wrote expected result because A=write was passed")
             else
               $stderr.puts "Undefined expectation. Please use A=write rake test to generate the expected trace"
             end
@@ -46,7 +47,7 @@ class TestRacer < Minitest::Test
               file.write(expected)
               file.truncate(file.pos)
               file.close
-              $stderr.puts("written changes")
+              $stderr.puts("Updated expected result because A=write was passed")
             else
               require "difftastic"
               differ =
@@ -58,7 +59,7 @@ class TestRacer < Minitest::Test
                   right_label: "to be equal"
                 )
 
-              $stderr.puts differ.diff_objects(actual, expected)
+              $stderr.puts differ.diff_yaml(actual, expected)
             end
           end
         end

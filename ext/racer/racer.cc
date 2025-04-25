@@ -4,6 +4,10 @@
 #include <unordered_map>
 #include <stack>
 
+#define DEBUG 0
+#define debug_warn(fmt, ...) \
+  do { if(DEBUG) rb_warn(fmt, __VA_ARGS__); } while(0)
+
 static VALUE tpCall = Qnil;
 static pthread_t pthread;
 static tiny_queue_t *tiny_queue;
@@ -222,7 +226,8 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   auto stack_pair = call_stacks.find(fiber_id);
   if(stack_pair == call_stacks.end()) {
     // This might happen if another thread started calling before our TracePoint was enabled
-    rb_warn("[%ld] Unexpected: No callstack for return of %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+    // or if Racer.start was called in a method that returns before Racer.stop was called
+    debug_warn("[%ld] Unexpected: No callstack for return of %s", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
   } else {
     auto& stack = (*stack_pair).second;
 

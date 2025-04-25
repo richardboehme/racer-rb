@@ -13,8 +13,9 @@ at_exit do
   out_file.close
 
   unless defined?(DATA)
-    if false
-      File.write("test/test_cases/retry.rb", "__END__\n#{expected}", mode: "a")
+    if true
+      File.write("test/test_cases/nested_constants.rb", "__END__\n#{expected}", mode: "a")
+      $stderr.puts("Wrote expected result because A=write was passed")
     else
       $stderr.puts "Undefined expectation. Please use A=write rake test to generate the expected trace"
     end
@@ -24,8 +25,8 @@ at_exit do
   actual = DATA.read.chomp!
 
   if actual != expected
-    if false
-      file = File.open("test/test_cases/retry.rb", "r+")
+    if true
+      file = File.open("test/test_cases/nested_constants.rb", "r+")
       file.each do |line|
         if line == "__END__\n"
           break
@@ -35,7 +36,7 @@ at_exit do
       file.write(expected)
       file.truncate(file.pos)
       file.close
-      $stderr.puts("written changes")
+      $stderr.puts("Updated expected result because A=write was passed")
     else
       require "difftastic"
       differ =
@@ -47,37 +48,62 @@ at_exit do
           right_label: "to be equal"
         )
 
-      $stderr.puts differ.diff_objects(actual, expected)
+      $stderr.puts differ.diff_yaml(actual, expected)
     end
   end
 end
 
-$counter = 0
-def foo
-  if $counter == 0
-    $counter += 1
-    raise
+module A
+  class B
+    class C
+      def foo(a)
+        a
+      end
+    end
   end
-rescue
-  retry
 end
 
 Racer.start
-foo
+A::B::C.new.foo(A::B::C.new)
 Racer.stop
 
 __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
-    name: Object
+    name: A::B::C
     type: :class
-    path: []
+    path:
+    - !ruby/object:Racer::Trace::Constant::PathFragment
+      name: :A
+      type: :module
+    - !ruby/object:Racer::Trace::Constant::PathFragment
+      name: :B
+      type: :class
   method_name: foo
   method_kind: :instance
   return_type: !ruby/object:Racer::Trace::Constant
-    name: NilClass
+    name: A::B::C
     type: :class
-    path: []
-  params: []
+    path:
+    - !ruby/object:Racer::Trace::Constant::PathFragment
+      name: :A
+      type: :module
+    - !ruby/object:Racer::Trace::Constant::PathFragment
+      name: :B
+      type: :class
+  params:
+  - !ruby/object:Racer::Trace::Param
+    name: :a
+    type_name: !ruby/object:Racer::Trace::Constant
+      name: A::B::C
+      type: :class
+      path:
+      - !ruby/object:Racer::Trace::Constant::PathFragment
+        name: :A
+        type: :module
+      - !ruby/object:Racer::Trace::Constant::PathFragment
+        name: :B
+        type: :class
+    type: :required
 
