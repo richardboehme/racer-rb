@@ -39,8 +39,8 @@ class Racer::Agent
 
     at_exit do
       @server.close
-      worker_thread.join
       File.unlink(@server_path)
+      worker_thread.join
     end
 
     main_loop
@@ -61,14 +61,14 @@ class Racer::Agent
 
         # File.write("messages", "#{received_message}\n\n", mode: "a+")
 
-        *messages, last_message = received_message.split("\n")
+        *messages, last_message = received_message.split("\0")
 
         if pending_message
           messages[0] = "#{pending_message}#{messages[0]}"
           pending_message = nil
         end
 
-        if received_message.end_with?("\n")
+        if received_message.end_with?("\0")
           messages << last_message
         else
           pending_message = last_message

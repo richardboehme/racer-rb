@@ -481,7 +481,7 @@ static void flush_end(VALUE arg)
   pthread_join(pthread, nullptr);
   tiny_queue_destroy(tiny_queue);
 
-  const char* buffer = "stop\n";
+  const char* buffer = "stop";
   if(send(socketFd, buffer, sizeof(buffer), 0) < 0) {
     perror("socket send flush");
   }

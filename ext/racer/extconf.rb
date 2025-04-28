@@ -9,5 +9,6 @@ $CXXFLAGS += " -ggdb3 -Og "
 append_cflags("-fvisibility=hidden")
 
 have_library("pthread")
+have_library("json-c")
 
 create_makefile "racer"
