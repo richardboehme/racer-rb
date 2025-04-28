@@ -31,7 +31,35 @@ __END__
     name: Array
     type: :class
     path: []
-    generic_arguments: []
+    generic_arguments:
+    - - !ruby/object:Racer::Trace::Constant
+        name: Integer
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: String
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: Array
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: Regexp
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: A::B
+        type: :class
+        path:
+        - !ruby/object:Racer::Trace::Constant::PathFragment
+          name: :A
+          type: :module
+        generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
@@ -82,7 +110,40 @@ __END__
     name: Hash
     type: :class
     path: []
-    generic_arguments: []
+    generic_arguments:
+    - - !ruby/object:Racer::Trace::Constant
+        name: Symbol
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: String
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: A::B
+        type: :class
+        path:
+        - !ruby/object:Racer::Trace::Constant::PathFragment
+          name: :A
+          type: :module
+        generic_arguments: []
+    - - !ruby/object:Racer::Trace::Constant
+        name: Integer
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: String
+        type: :class
+        path: []
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::Constant
+        name: Regexp
+        type: :class
+        path: []
+        generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
