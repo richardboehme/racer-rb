@@ -4,4 +4,6 @@ class ::RBSCollectorTest
   def bar: (*::Array[untyped], **::Hash[untyped, untyped]) { (?) -> untyped } -> ::NilClass
 
   def baz: (::NilClass a, *::Array[untyped] args, ::NilClass b) -> ::NilClass
+
+  def param_without_name: (::NilClass) -> ::NilClass
 end

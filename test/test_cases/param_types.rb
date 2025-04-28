@@ -34,7 +34,7 @@ end
 nilkey(3)
 
 # RACER-TODO: This reports as 0 arguments
-# arr_params([2, 3])
+arr_params([2, 3])
 # RACER-TODO: Should we type **nil?
 
 Racer.stop
@@ -273,6 +273,29 @@ __END__
     name: :a
     type_name: !ruby/object:Racer::Trace::Constant
       name: Integer
+      type: :class
+      path: []
+      generic_arguments: []
+    type: :required
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: Object
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: arr_params
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    type: :class
+    path: []
+    generic_arguments: []
+  params:
+  - !ruby/object:Racer::Trace::Param
+    name:
+    type_name: !ruby/object:Racer::Trace::Constant
+      name: Array
       type: :class
       path: []
       generic_arguments: []

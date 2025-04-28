@@ -134,7 +134,7 @@ class Racer::Agent
 
     type_name = shift_constant(data)
 
-    Racer::Trace::Param.new(name: name.to_sym, type_name:, type:)
+    Racer::Trace::Param.new(name: name&.to_sym, type_name:, type:)
   end
 
   def shift_constant(data)

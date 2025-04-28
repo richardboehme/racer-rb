@@ -86,6 +86,9 @@ class RBSCollectorTest < Minitest::Test
         { name: :a, type: :required },
         { name: :args, klass: Array, type: :rest },
         { name: :b, type: :required }
+      ]),
+      trace(name: :param_without_name, params: [
+        { name: nil, type: :required }
       ])
     ].each { collector.collect(it) }
 

@@ -74,7 +74,11 @@ void *init_worker(void *arg)
     for (long i = 0; i < trace->params_size; ++i)
     {
       auto param = trace->params[i];
-      json_object_array_add(json_array, json_object_new_string(param.name));
+      if(param.name) {
+        json_object_array_add(json_array, json_object_new_string(param.name));
+      } else {
+        json_object_array_add(json_array, json_object_new_null());
+      }
       json_object_array_add(json_array, json_object_new_int(param.param_type));
 
       write_constant(json_array, param.type_name);

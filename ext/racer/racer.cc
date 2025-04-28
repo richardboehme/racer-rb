@@ -241,6 +241,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
     ID param_type = rb_sym2id(rb_ary_entry(param, 0));
 
+
     if (RB_TEST(name))
     {
       auto param_name_id = rb_sym2id(name);
@@ -302,9 +303,8 @@ process_call_event(rb_trace_arg_t *trace_arg)
       }
 
       if(param_type == reqParam) {
-        // TODO: This is probably def foo((bar, foo)); end
-        // Can we type this? If it only happens with arrays we might at least give information about it being an array? I wonder though how RBS
-        // handles this in general. For the caller site the array type helps a bit, but inside the method this does not help at all and we have no parameter name
+        trace->params[trace->params_size] = { nullptr, class_to_constant(rb_cArray), REQUIRED };
+        trace->params_size++;
         continue;
       }
 
