@@ -197,57 +197,64 @@ process_call_event(rb_trace_arg_t *trace_arg)
         param_class = rb_class_of(value);
 
         if (param_class == rb_cArray) {
-          generic_argument_size = 1;
-          // We need to use a set and a vector to preserve order of the union types
-          std::unordered_set<VALUE> types = {};
-          std::vector<VALUE> types_vec = {};
-          auto ary_ptr = RARRAY_CONST_PTR(value);
-          // This is O(n) and thus could be pretty slow
-          for(auto j = 0; j < rb_array_len(value); ++j) {
-            auto item = ary_ptr[j];
+          auto length = rb_array_len(value);
+          if(length > 0) {
+            generic_argument_size = 1;
 
-            auto klass = rb_class_of(item);
-            auto result = types.insert(klass);
-            if(result.second) {
-              types_vec.push_back(klass);
+            // We need to use a set and a vector to preserve order of the union types
+            std::unordered_set<VALUE> types = {};
+            std::vector<VALUE> types_vec = {};
+            auto ary_ptr = RARRAY_CONST_PTR(value);
+            // This is O(n) and thus could be pretty slow
+            for(auto j = 0; j < rb_array_len(value); ++j) {
+              auto item = ary_ptr[j];
+
+              auto klass = rb_class_of(item);
+              auto result = types.insert(klass);
+              if(result.second) {
+                types_vec.push_back(klass);
+              }
             }
-          }
 
-          generic_arguments = new GenericArgument[1];
-          generic_arguments[0] = generic_argument_from_union_types(types_vec);
+            generic_arguments = new GenericArgument[1];
+            generic_arguments[0] = generic_argument_from_union_types(types_vec);
+          }
         } else
         if(param_class == rb_cHash) {
           // RACER-TODO: I think we can optimize this, if the parameter is a keyword argument rest because
           // keys of those must be symbols, right?
-          generic_argument_size = 2;
-          std::unordered_set<VALUE> key_types = {};
-          std::vector<VALUE> key_types_vec = {};
-          std::unordered_set<VALUE> value_types = {};
-          std::vector<VALUE> value_types_vec = {};
-
           auto hash_size = RHASH_SIZE(value);
-          VALUE key_and_value_types = rb_ary_new_capa(hash_size * 2);
-          rb_hash_foreach(value, hash_to_key_and_value_types, key_and_value_types);
-          auto ary_ptr = RARRAY_CONST_PTR(key_and_value_types);
+          if(hash_size > 0) {
+            generic_argument_size = 2;
 
-          // This is O(2n) and thus could be pretty slow
-          for(auto j = 0; j < hash_size; ++j) {
-            auto key_type = ary_ptr[j * 2];
-            auto key_result = key_types.insert(key_type);
-            if(key_result.second) {
-              key_types_vec.push_back(key_type);
+            std::unordered_set<VALUE> key_types = {};
+            std::vector<VALUE> key_types_vec = {};
+            std::unordered_set<VALUE> value_types = {};
+            std::vector<VALUE> value_types_vec = {};
+
+            VALUE key_and_value_types = rb_ary_new_capa(hash_size * 2);
+            rb_hash_foreach(value, hash_to_key_and_value_types, key_and_value_types);
+            auto ary_ptr = RARRAY_CONST_PTR(key_and_value_types);
+
+            // This is O(2n) and thus could be pretty slow
+            for(auto j = 0; j < hash_size; ++j) {
+              auto key_type = ary_ptr[j * 2];
+              auto key_result = key_types.insert(key_type);
+              if(key_result.second) {
+                key_types_vec.push_back(key_type);
+              }
+
+              auto value_type = ary_ptr[j * 2 + 1];
+              auto value_result = value_types.insert(value_type);
+              if(value_result.second) {
+                value_types_vec.push_back(value_type);
+              }
             }
 
-            auto value_type = ary_ptr[j * 2 + 1];
-            auto value_result = value_types.insert(value_type);
-            if(value_result.second) {
-              value_types_vec.push_back(value_type);
-            }
+            generic_arguments = new GenericArgument[2];
+            generic_arguments[0] = generic_argument_from_union_types(key_types_vec);
+            generic_arguments[1] = generic_argument_from_union_types(value_types_vec);
           }
-
-          generic_arguments = new GenericArgument[2];
-          generic_arguments[0] = generic_argument_from_union_types(key_types_vec);
-          generic_arguments[1] = generic_argument_from_union_types(value_types_vec);
         }
       }
 
