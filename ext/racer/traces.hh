@@ -22,6 +22,12 @@ enum MethodKind {
   SINGLETON = 1,
 };
 
+enum MethodVisibility {
+  PUBLIC = 0,
+  PRIVATE = 1,
+  PROTECTED = 2,
+};
+
 typedef struct Path {
   char* name { nullptr };
   ClassType type { MODULE };
@@ -54,6 +60,7 @@ typedef struct ReturnTrace
   Constant method_owner {};
   char *method_name { nullptr };
   MethodKind method_kind { INSTANCE };
+  MethodVisibility method_visibility { PUBLIC };
   Constant return_type {};
   // Params is an array where each even element is a parameter name
   // and the next element is the param type

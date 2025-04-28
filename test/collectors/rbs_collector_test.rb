@@ -126,6 +126,18 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_visibilities
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :foo, visibility: :public),
+      trace(name: :bar, visibility: :private),
+      trace(name: :baz, visibility: :protected)
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?
@@ -170,11 +182,20 @@ class RBSCollectorTest < Minitest::Test
     end
   end
 
-  def trace(name:, return_type: NilClass, return_type_generic_arguments: [], owner: RBSCollectorTest, kind: :instance, params: [])
+  def trace(
+    name:,
+    return_type: NilClass,
+    return_type_generic_arguments: [],
+    owner: RBSCollectorTest,
+    kind: :instance,
+    visibility: :public,
+    params: []
+  )
     Racer::Trace.new(
       method_owner: to_constant(owner),
       method_name: name,
       method_kind: kind,
+      method_visibility: visibility,
       return_type: to_constant(return_type, generic_arguments: return_type_generic_arguments),
       params: params.map { to_param(**it) }
     )

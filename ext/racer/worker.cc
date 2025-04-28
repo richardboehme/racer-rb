@@ -64,6 +64,7 @@ void *init_worker(void *arg)
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
     json_object_array_add(json_array, json_object_new_string(trace->method_name));
     json_object_array_add(json_array, json_object_new_int(trace->method_kind));
+    json_object_array_add(json_array, json_object_new_int(trace->method_visibility));
 
     write_constant(json_array, trace->return_type);
     write_constant(json_array, trace->method_owner);

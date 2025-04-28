@@ -24,6 +24,7 @@ __END__
     generic_arguments: []
   method_name: foo
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: Array
     type: :class
@@ -74,6 +75,7 @@ __END__
     generic_arguments: []
   method_name: foo
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: Hash
     type: :class

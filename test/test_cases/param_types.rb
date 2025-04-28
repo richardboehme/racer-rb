@@ -49,6 +49,7 @@ __END__
     generic_arguments: []
   method_name: foo
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
@@ -139,6 +140,7 @@ __END__
     generic_arguments: []
   method_name: bar
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
@@ -182,6 +184,7 @@ __END__
     generic_arguments: []
   method_name: anon
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
@@ -220,6 +223,7 @@ __END__
     generic_arguments: []
   method_name: baz
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
@@ -258,6 +262,7 @@ __END__
     generic_arguments: []
   method_name: nilkey
   method_kind: :instance
+  method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class

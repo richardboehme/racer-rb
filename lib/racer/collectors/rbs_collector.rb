@@ -146,6 +146,10 @@ module Racer::Collectors
     end
 
     def to_method_definition(name, kind, overloads)
+      # It could totally be that a method was public when called the first time and private
+      # the next time. We cannot depict such a case using RBS.
+      visibility = overloads.last.method_visibility
+
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
@@ -169,7 +173,10 @@ module Racer::Collectors
         overloading: false,
         location: nil,
         comment: nil,
-        visibility: nil
+        # We do not use visibility sections so declare all methods that are not private
+        # without visibility to mark them as "public".
+        # Protected methods are not supported by RBS yet.
+        visibility: visibility == :private ? :private : nil
       )
     end
 

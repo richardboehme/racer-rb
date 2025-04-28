@@ -95,7 +95,13 @@ class Racer::Agent
           method_kind =
             Racer::Trace::KINDS.fetch(data.shift) do |index|
               warn "Unexpected method kind received #{index}"
-              Racer::Trace::Param::TYPES.first
+              Racer::Trace::KINDS.first
+            end
+
+          method_visibility =
+            Racer::Trace::VISIBILITIES.fetch(data.shift) do |index|
+              warn "Unexpected method visibility received #{index}"
+              Racer::Trace::VISIBILITIES.first
             end
 
           return_type = shift_constant(data)
@@ -109,6 +115,7 @@ class Racer::Agent
               method_owner:,
               method_name:,
               method_kind:,
+              method_visibility:,
               return_type:,
               params:
             )

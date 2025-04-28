@@ -18,7 +18,7 @@ static int socketFd = 0;
 
 static VALUE Racer = Qnil;
 
-static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock = -1;
+static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock, public_method_defined, private_method_defined = -1;
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
@@ -116,10 +116,12 @@ process_call_event(rb_trace_arg_t *trace_arg)
   ReturnTrace *trace = (struct ReturnTrace *)malloc(sizeof(struct ReturnTrace));
   trace->rescued = false;
 
-  trace->method_name = strdup(rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+  auto method_id = rb_tracearg_method_id(trace_arg);
+  trace->method_name = strdup(rb_id2name(SYM2ID(method_id)));
   trace->method_kind = INSTANCE;
 
   VALUE defined_class = rb_tracearg_defined_class(trace_arg);
+  auto original_defined_class = defined_class;
   if(RB_FL_TEST_RAW(defined_class, FL_SINGLETON)) {
     VALUE tmp_defined_class = rb_class_attached_object(defined_class);
     auto type = rb_type(tmp_defined_class);
@@ -147,6 +149,16 @@ process_call_event(rb_trace_arg_t *trace_arg)
         return;
       }
     }
+  }
+
+  // Qfalse == 0x0
+  if(rb_funcall(original_defined_class, public_method_defined, 2, method_id, Qfalse)) {
+    trace->method_visibility = PUBLIC;
+  } else
+  if(rb_funcall(original_defined_class, private_method_defined, 2, method_id, Qfalse)) {
+    trace->method_visibility = PRIVATE;
+  } else {
+    trace->method_visibility = PROTECTED;
   }
 
   VALUE parameters = rb_tracearg_parameters(trace_arg); // We may be able to cache this for each method? or access the parsed stuff idk
@@ -512,6 +524,8 @@ Init_racer(void)
   anonRest = rb_intern("*");
   anonKeyrest = rb_intern("**");
   anonBlock = rb_intern("&");
+  public_method_defined = rb_intern("public_method_defined?");
+  private_method_defined = rb_intern("private_method_defined?");
   rb_global_variable(&tpCall);
 
   rb_define_singleton_method(Racer, "start", start, 0);

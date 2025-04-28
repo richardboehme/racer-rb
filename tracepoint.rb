@@ -33,6 +33,8 @@ class Foo < Bar
     a
   end
 
+  private
+
   def foo(a, b)
     super
     [a, b]

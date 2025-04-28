@@ -1,0 +1,7 @@
+class ::RBSCollectorTest
+  def foo: () -> ::NilClass
+
+  private def bar: () -> ::NilClass
+
+  def baz: () -> ::NilClass
+end

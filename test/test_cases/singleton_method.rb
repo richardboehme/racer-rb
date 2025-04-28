@@ -25,6 +25,7 @@ __END__
     generic_arguments: []
   method_name: foo
   method_kind: :singleton
+  method_visibility: :public
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
@@ -39,6 +40,7 @@ __END__
     generic_arguments: []
   method_name: bar
   method_kind: :singleton
+  method_visibility: :public
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
     type: :class
