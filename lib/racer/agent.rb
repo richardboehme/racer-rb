@@ -39,6 +39,7 @@ class Racer::Agent
 
     at_exit do
       @server.close
+      @queue.close if @queue.empty?
       File.unlink(@server_path)
       worker_thread.join
     end
