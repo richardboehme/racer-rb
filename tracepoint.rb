@@ -24,16 +24,17 @@ tp.enable
 # Racer.start
 
 class Bar
+  def self.foo
+  end
+
   def foo(c, d)
   end
 end
 
 class Foo < Bar
   def self.foo(a)
-    a
+    super()
   end
-
-  private
 
   def foo(a, b)
     super
@@ -43,14 +44,16 @@ end
 
 # f = Foo.new
 
+Foo.new.foo(1, 2)
+
 # Foo.foo(1)
 # f.foo(1, 2)
 
-module A
-  def self.foo
-  end
-end
-A.foo
+# module A
+#   def self.foo
+#   end
+# end
+# A.foo
 
 
 # Racer.stop

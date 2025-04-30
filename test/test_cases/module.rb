@@ -13,14 +13,12 @@ B.new.foo
 
 Racer.stop
 
-# RACER-TODO: We should probably also return B as a method owner or something
-
 __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
-    name: A
-    type: :module
+    name: B
+    type: :class
     path: []
     generic_arguments: []
   method_name: foo

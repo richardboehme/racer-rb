@@ -155,8 +155,8 @@ __END__
   params: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
-    name: A
-    type: :module
+    name: Object
+    type: :class
     path: []
     generic_arguments: []
   method_name: private_method
@@ -170,8 +170,8 @@ __END__
   params: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
-    name: A
-    type: :module
+    name: Object
+    type: :class
     path: []
     generic_arguments: []
   method_name: protected_method
@@ -185,8 +185,8 @@ __END__
   params: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
-    name: A
-    type: :module
+    name: Object
+    type: :class
     path: []
     generic_arguments: []
   method_name: public_method
