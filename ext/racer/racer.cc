@@ -193,7 +193,6 @@ process_call_event(rb_trace_arg_t *trace_arg)
     auto type = rb_type(tmp_defined_class);
     if (type == T_MODULE || type == T_CLASS) {
       defined_class = tmp_defined_class;
-      trace->method_kind = SINGLETON;
     } else {
       // TODO: Check if these cases can still happen or if we can safe the check before
     }
@@ -202,7 +201,11 @@ process_call_event(rb_trace_arg_t *trace_arg)
   // If the method isn't defined in self (say in a module or superclass) we want to add it to self instead.
   // This is a decision that might be revised. It's optimized for call site devexp but is bad for the callee.
   auto self = rb_tracearg_self(trace_arg);
-  if(trace->method_kind == INSTANCE) {
+  auto self_type = rb_type(self);
+  if(self_type ==  T_CLASS || self_type == T_MODULE) {
+    trace->method_kind = SINGLETON;
+  } else {
+    trace->method_kind = INSTANCE;
     self = rb_class_of(self);
   }
 

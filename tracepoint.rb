@@ -23,28 +23,49 @@ tp.enable
 
 # Racer.start
 
-class Bar
-  def self.foo
+# class Bar
+#   def self.foo
+#   end
+
+#   def foo(c, d)
+#   end
+# end
+
+# class Foo < Bar
+#   def self.foo(a)
+#     super()
+#   end
+
+#   def foo(a, b)
+#     super
+#     [a, b]
+#   end
+# end
+
+# # f = Foo.new
+
+# Foo.new.foo(1, 2)
+
+module A
+  def foo
   end
 
-  def foo(c, d)
+  def self.bar
+
   end
 end
 
-class Foo < Bar
-  def self.foo(a)
-    super()
-  end
-
-  def foo(a, b)
-    super
-    [a, b]
-  end
+class B
+  extend A
 end
 
-# f = Foo.new
+class C
+  include A
+end
 
-Foo.new.foo(1, 2)
+A.bar
+# B.foo
+# C.new.foo
 
 # Foo.foo(1)
 # f.foo(1, 2)
