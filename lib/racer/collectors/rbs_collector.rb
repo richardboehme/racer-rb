@@ -145,23 +145,30 @@ module Racer::Collectors
       )
     end
 
-    def to_method_definition(name, kind, overloads)
+    def to_method_definition(name, kind, traces)
       # It could totally be that a method was public when called the first time and private
       # the next time. We cannot depict such a case using RBS.
-      visibility = overloads.last.method_visibility
+      visibility = traces.last.method_visibility
+
+      overloads = {}
+
+      traces.map do |trace|
+        overloads[trace.params] ||= []
+        overloads[trace.params] << trace
+      end
 
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
-        overloads: overloads.map do |overload_trace|
-          block_param = overload_trace.params.find { it.type == :block }
+        overloads: overloads.map do |params, traces|
+          block_param = params.find { it.type == :block }
 
           RBS::AST::Members::MethodDefinition::Overload.new(
             method_type: RBS::MethodType.new(
               type_params: [],
               type: RBS::Types::Function.new(
-                **method_parameters(overload_trace.params),
-                return_type: to_class_instance_type(overload_trace.return_type)
+                **method_parameters(params),
+                return_type: to_class_instance_type(*traces.map(&:return_type))
               ),
               block: block_param ? to_block(block_param) : nil,
               location: nil
@@ -248,7 +255,12 @@ module Racer::Collectors
       RBS::TypeName.new(name: type_name_str.to_sym, namespace: RBS::Namespace.root)
     end
 
-    def to_class_instance_type(constant)
+    def to_class_instance_type(*constants)
+      if constants.size > 1
+        return RBS::Types::Union.new(types: constants.map { |type| to_class_instance_type(type) }, location: nil)
+      end
+
+      constant = constants.first
       type_name = to_type_name(constant.name)
       existing_type = @environment.class_decls[type_name]
       type_params = existing_type&.type_params || []
@@ -256,7 +268,7 @@ module Racer::Collectors
       args =
         if constant.generic_arguments.size == type_params.size
           constant.generic_arguments.map do |union_types|
-            RBS::Types::Union.new(types: union_types.map { |type| to_class_instance_type(type) }, location: nil)
+            to_class_instance_type(*union_types)
           end
         else
           type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }

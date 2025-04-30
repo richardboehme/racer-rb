@@ -73,5 +73,11 @@ class Racer::Trace
     def ==(other)
       other.name == name && other.type_name == type_name && other.type == type
     end
+
+    alias eql? ==
+
+    def hash
+      [name, type_name.name, type].hash
+    end
   end
 end

@@ -43,6 +43,11 @@ class RBSCollectorTest < Minitest::Test
       ),
       trace(
         name: :foo,
+        params: [{ name: :a, klass: Integer, type: :required }],
+        return_type: Integer
+      ),
+      trace(
+        name: :foo,
         params: [{ name: :a, klass: String, type: :required }],
         return_type: String
       ),

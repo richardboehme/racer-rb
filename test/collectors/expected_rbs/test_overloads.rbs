@@ -1,7 +1,6 @@
 class ::RBSCollectorTest
-  def foo: () -> ::String
-         | () -> ::Integer
-         | (::Integer a) -> ::String
+  def foo: () -> (::String | ::Integer)
+         | (::Integer a) -> (::String | ::Integer)
          | (::String a) -> ::String
 
   def self.foo: () -> ::String
