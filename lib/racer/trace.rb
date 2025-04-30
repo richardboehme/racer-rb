@@ -46,7 +46,12 @@ class Racer::Trace
     end
 
     def ==(other)
-      other.name == name
+      other.name == name && generic_arguments == other.generic_arguments
+    end
+    alias eql? ==
+
+    def hash
+      [name, generic_arguments].hash
     end
   end
 
@@ -73,11 +78,10 @@ class Racer::Trace
     def ==(other)
       other.name == name && other.type_name == type_name && other.type == type
     end
-
     alias eql? ==
 
     def hash
-      [name, type_name.name, type].hash
+      [name, type_name, type].hash
     end
   end
 end

@@ -53,6 +53,16 @@ class RBSCollectorTest < Minitest::Test
       ),
       # Ensure that singleton method with same name and type stays separate
       trace(name: :foo, return_type: String, kind: :singleton),
+      trace(
+        name: :bar,
+        params: [{ name: :a, klass: Array, generic_arguments: [[to_constant(Integer)]], type: :required }],
+        return_type: Integer
+      ),
+      trace(
+        name: :bar,
+        params: [{ name: :a, klass: Array, generic_arguments: [[to_constant(String)]], type: :required }],
+        return_type: String
+      )
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)
