@@ -26,7 +26,7 @@ static VALUE
 class_to_name(VALUE klass) {
   auto class_name = rb_class_path_cached(rb_class_real(klass));
   if(RB_NIL_P(class_name)) {
-    if(RB_TYPE_P(class_name, T_CLASS)) {
+    if(RB_TYPE_P(klass, T_CLASS)) {
       do {
         klass = rb_class_superclass(klass);
         if(!RB_TEST(klass)) {
