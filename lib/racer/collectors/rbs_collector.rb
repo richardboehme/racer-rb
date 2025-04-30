@@ -216,9 +216,16 @@ module Racer::Collectors
               parameters[:optional_positionals] << rbs_param
             end
           when :rest
+            type =
+              if param.type_name.generic_arguments.size == 1
+                to_class_instance_type(*param.type_name.generic_arguments[0])
+              else
+                RBS::Types::Bases::Any.new(location: nil)
+              end
+
             parameters[:rest_positionals] =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name),
+                type:,
                 name: param.name == :* ? nil : param.name
               )
           when :keyword_required, :keyword_optional
@@ -234,9 +241,16 @@ module Racer::Collectors
               parameters[:optional_keywords][param.name] = rbs_param
             end
           when :keyword_rest
+            type =
+              if param.type_name.generic_arguments.size == 2
+                to_class_instance_type(*param.type_name.generic_arguments[1])
+              else
+                RBS::Types::Bases::Any.new(location: nil)
+              end
+
             parameters[:rest_keywords] =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name),
+                type:,
                 name: param.name == :** ? nil : param.name
               )
           end

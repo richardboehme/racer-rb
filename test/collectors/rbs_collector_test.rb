@@ -118,6 +118,7 @@ class RBSCollectorTest < Minitest::Test
         name: :foo,
         params: [
           { name: :a, klass: Array, generic_arguments: [[to_constant(String), to_constant(Integer)]], type: :required },
+          { name: :args, klass: Array, generic_arguments: [[to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :rest },
           { name: :b, klass: Hash, generic_arguments: [[to_constant(Symbol), to_constant(String)], [to_constant(Float), to_constant(Regexp)]], type: :required },
           { name: :options, klass: Hash, generic_arguments: [[to_constant(Symbol)], [to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :keyword_rest }
         ],
