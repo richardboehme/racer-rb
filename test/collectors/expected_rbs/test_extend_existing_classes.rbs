@@ -1,0 +1,18 @@
+class ::Integer
+  def prime?: () -> ::NilClass
+
+  def +: () -> ::NilClass
+       | ...
+
+  def self.bar: () -> ::NilClass
+
+  def self.sqrt: () -> ::NilClass
+               | ...
+end
+
+class ::Hash[unchecked out K, unchecked out V]
+  def foo: () -> ::NilClass
+
+  private def initialize: () -> ::NilClass
+                        | ...
+end

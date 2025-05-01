@@ -7,20 +7,20 @@ module Racer::Collectors
       loader = RBS::EnvironmentLoader.new
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
-      @has_types = Set.new
+      @existing_types = {}
     end
 
     def collect(trace)
       push_constant_to_results(trace.method_owner)
 
       # TODO: We probably want to "enhance" those types (say monkey patches) but we'd at least need to copy their type params (generics)
-      return if @has_types.include?(trace.method_owner.name)
+      # return if @has_types.include?(trace.method_owner.name)
 
       method_type_key =
         case trace.method_kind
-        in :instance
+        when :instance
           :instance_methods
-        in :singleton
+        when :singleton
           :singleton_methods
         end
 
@@ -48,6 +48,8 @@ module Racer::Collectors
       declarations =
         @results.map do |owner_name, owner|
           owner => { type:, instance_methods:, singleton_methods: }
+
+          next if instance_methods.empty? && singleton_methods.empty? && @existing_types.key?(owner_name)
 
           case type
           when :class
@@ -85,7 +87,7 @@ module Racer::Collectors
 
     def push_type_to_results(name, class_type, path)
       return if @results.key?(name)
-      return if @has_types.include?(name)
+      return if @existing_types.key?(name)
 
       # TODO: Should we refactor this to store the relative name at the Constant class?
       # We also need the absolute path though to check in the maps above
@@ -103,9 +105,9 @@ module Racer::Collectors
           namespace: RBS::Namespace.new(path:, absolute: true)
         )
 
-      if @environment.class_decls.key?(type_name)
-        @has_types.add(name)
-        return
+      class_decl = @environment.class_decls[type_name]
+      if class_decl
+        @existing_types[name] = { class_decl:, type_name: }
       end
 
       @results[name] = { type: class_type, instance_methods: {}, singleton_methods: {} }
@@ -126,7 +128,7 @@ module Racer::Collectors
     def to_class_delaration(owner, instance_methods, singleton_methods)
       RBS::AST::Declarations::Class.new(
         name: to_type_name(owner),
-        type_params: [],
+        type_params: type_params_of_existing_class(owner),
         super_class: nil,
         members: to_method_definitions(instance_methods, singleton_methods),
         annotations: [],
@@ -157,6 +159,20 @@ module Racer::Collectors
         overloads[trace.params] << trace
       end
 
+      existing_type = @existing_types[traces.first.method_owner.name]
+      overloading =
+        if existing_type
+          methods =
+            case kind
+            when :instance
+              existing_type[:instance] ||= @definition_builder.build_instance(existing_type[:type_name])
+            when :singleton
+              existing_type[:singleton] ||= @definition_builder.build_singleton(existing_type[:type_name])
+            end.methods
+
+          methods.key?(name.to_sym)
+        end
+
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
@@ -177,7 +193,7 @@ module Racer::Collectors
           )
         end,
         annotations: [],
-        overloading: false,
+        overloading: !!overloading,
         location: nil,
         comment: nil,
         # We do not use visibility sections so declare all methods that are not private
@@ -293,6 +309,12 @@ module Racer::Collectors
         args:,
         location: nil
       )
+    end
+
+    def type_params_of_existing_class(owner)
+      return [] unless @existing_types.key?(owner)
+
+      @existing_types[owner][:class_decl].type_params
     end
   end
 end

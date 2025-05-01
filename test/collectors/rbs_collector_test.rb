@@ -157,6 +157,21 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_extend_existing_classes
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :prime?, owner: Integer),
+      trace(name: :+, owner: Integer),
+      trace(name: :bar, owner: Integer, kind: :singleton),
+      trace(name: :sqrt, owner: Integer, kind: :singleton),
+      trace(name: :foo, owner: Hash),
+      trace(name: :initialize, owner: Hash, visibility: :private),
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?
@@ -212,7 +227,7 @@ class RBSCollectorTest < Minitest::Test
   )
     Racer::Trace.new(
       method_owner: to_constant(owner),
-      method_name: name,
+      method_name: name.to_s,
       method_kind: kind,
       method_visibility: visibility,
       return_type: to_constant(return_type, generic_arguments: return_type_generic_arguments),
