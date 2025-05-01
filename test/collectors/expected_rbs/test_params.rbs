@@ -1,9 +1,9 @@
 class ::RBSCollectorTest
-  def foo: (::NilClass a, ?::NilClass b, *untyped args, c: ::NilClass, ?d: ::NilClass, **untyped options) { (?) -> untyped } -> ::NilClass
+  def foo: (nil a, ?nil b, *untyped args, c: nil, ?d: nil, **untyped options) { (?) -> untyped } -> nil
 
-  def bar: (*untyped, **untyped) { (?) -> untyped } -> ::NilClass
+  def bar: (*untyped, **untyped) { (?) -> untyped } -> nil
 
-  def baz: (::NilClass a, *untyped args, ::NilClass b) -> ::NilClass
+  def baz: (nil a, *untyped args, nil b) -> nil
 
-  def param_without_name: (::NilClass) -> ::NilClass
+  def param_without_name: (nil) -> nil
 end

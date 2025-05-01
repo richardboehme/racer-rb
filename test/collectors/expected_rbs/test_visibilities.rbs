@@ -1,7 +1,7 @@
 class ::RBSCollectorTest
-  def foo: () -> ::NilClass
+  def foo: () -> nil
 
-  private def bar: () -> ::NilClass
+  private def bar: () -> nil
 
-  def baz: () -> ::NilClass
+  def baz: () -> nil
 end

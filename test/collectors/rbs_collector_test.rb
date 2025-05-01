@@ -172,6 +172,29 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_literals
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(
+        name: :foo,
+        params: [
+          { name: :a, klass: FalseClass, type: :required },
+          { name: :b, klass: TrueClass, type: :required },
+          { name: :c, klass: NilClass, type: :required }
+        ],
+        return_type: TrueClass
+      ),
+      trace(name: :bar, return_type: FalseClass),
+      trace(name: :baz, return_type: NilClass),
+      trace(name: :union, return_type: TrueClass),
+      trace(name: :union, return_type: FalseClass),
+      trace(name: :union, return_type: NilClass)
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?

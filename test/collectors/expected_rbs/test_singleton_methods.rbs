@@ -1,7 +1,7 @@
 class ::RBSCollectorTest
-  def self.foo: () -> ::NilClass
+  def self.foo: () -> nil
 end
 
 module ::TestModule
-  def self.foo: () -> ::NilClass
+  def self.foo: () -> nil
 end

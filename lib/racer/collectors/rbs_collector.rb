@@ -184,7 +184,7 @@ module Racer::Collectors
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(params),
-                return_type: to_class_instance_type(*traces.map(&:return_type))
+                return_type: to_rbs_type(*traces.map(&:return_type))
               ),
               block: block_param ? to_block(block_param) : nil,
               location: nil
@@ -218,7 +218,7 @@ module Racer::Collectors
           when :required, :optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name),
+                type: to_rbs_type(param.type_name),
                 name: param.name
               )
 
@@ -234,7 +234,7 @@ module Racer::Collectors
           when :rest
             type =
               if param.type_name.generic_arguments.size == 1
-                to_class_instance_type(*param.type_name.generic_arguments[0])
+                to_rbs_type(*param.type_name.generic_arguments[0])
               else
                 RBS::Types::Bases::Any.new(location: nil)
               end
@@ -247,7 +247,7 @@ module Racer::Collectors
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_class_instance_type(param.type_name),
+                type: to_rbs_type(param.type_name),
                 name: nil
               )
 
@@ -259,7 +259,7 @@ module Racer::Collectors
           when :keyword_rest
             type =
               if param.type_name.generic_arguments.size == 2
-                to_class_instance_type(*param.type_name.generic_arguments[1])
+                to_rbs_type(*param.type_name.generic_arguments[1])
               else
                 RBS::Types::Bases::Any.new(location: nil)
               end
@@ -285,30 +285,58 @@ module Racer::Collectors
       RBS::TypeName.new(name: type_name_str.to_sym, namespace: RBS::Namespace.root)
     end
 
-    def to_class_instance_type(*constants)
+    def to_rbs_type(*constants)
       if constants.size > 1
-        return RBS::Types::Union.new(types: constants.map { |type| to_class_instance_type(type) }, location: nil)
+        bool_union = [false, false]
+        constants.each do |constant|
+          if constant.name == "TrueClass"
+            bool_union[0] = true
+          elsif constant.name == "FalseClass"
+            bool_union[1] = true
+          end
+        end
+
+        if bool_union.all?
+          constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
+          constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: []))
+        end
+      end
+
+      if constants.size > 1
+        return RBS::Types::Union.new(types: constants.map { |type| to_rbs_type(type) }, location: nil)
       end
 
       constant = constants.first
-      type_name = to_type_name(constant.name)
-      existing_type = @environment.class_decls[type_name]
-      type_params = existing_type&.type_params || []
 
-      args =
-        if constant.generic_arguments.size == type_params.size
-          constant.generic_arguments.map do |union_types|
-            to_class_instance_type(*union_types)
+      case constant.name
+      when "bool"
+        RBS::Types::Bases::Bool.new(location: nil)
+      when "NilClass"
+        RBS::Types::Bases::Nil.new(location: nil)
+      when "TrueClass"
+        RBS::Types::Literal.new(literal: true, location: nil)
+      when "FalseClass"
+        RBS::Types::Literal.new(literal: false, location: nil)
+      else
+        type_name = to_type_name(constant.name)
+        existing_type = @environment.class_decls[type_name]
+        type_params = existing_type&.type_params || []
+
+        args =
+          if constant.generic_arguments.size == type_params.size
+            constant.generic_arguments.map do |union_types|
+              to_rbs_type(*union_types)
+            end
+          else
+            type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
           end
-        else
-          type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
-        end
 
-      RBS::Types::ClassInstance.new(
-        name: type_name,
-        args:,
-        location: nil
-      )
+        RBS::Types::ClassInstance.new(
+          name: type_name,
+          args:,
+          location: nil
+        )
+      end
     end
 
     def type_params_of_existing_class(owner)
