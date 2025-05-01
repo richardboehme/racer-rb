@@ -1,19 +1,20 @@
 # tp2 = TracePoint.new(:call) do |tp|
 #   p [:call, caller[0..2], Thread.current.native_thread_id]
 # end
+require_relative "./test"
 
 tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
-  binding.irb
-  p [
-    tp.path,
-    tp.lineno,
-    tp.callee_id, # name of method that was called -> in path:lineno
-    tp.method_id, # name of actual method
-    tp.self,
-    # tp.return_value,
-    tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
-  ]
+  p caller_locations(0, 1).first.path
+  # p [
+  #   tp.path,
+  #   tp.lineno,
+  #   tp.callee_id, # name of method that was called -> in path:lineno
+  #   tp.method_id, # name of actual method
+  #   tp.self,
+  #   # tp.return_value,
+  #   tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
+  # ]
 end
 # tp2.enable
 # require_relative "lib/racer"
@@ -46,24 +47,32 @@ tp.enable
 
 # Foo.new.foo(1, 2)
 
-module A
-  def foo
-  end
+# module A
+#   def foo
+#   end
 
-  def self.bar
+#   def self.bar
 
-  end
+#   end
+# end
+
+# class B
+#   extend A
+# end
+
+# class C
+#   include A
+# end
+
+# A.bar
+foo
+
+Foo.foo
+
+class Bar < Foo
+  foo
 end
 
-class B
-  extend A
-end
-
-class C
-  include A
-end
-
-A.bar
 # B.foo
 # C.new.foo
 

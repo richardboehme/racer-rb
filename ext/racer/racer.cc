@@ -17,8 +17,11 @@ static int flushed = 0;
 static int socketFd = 0;
 
 static VALUE Racer = Qnil;
+static VALUE pathMatcher = Qnil;
 
-static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock, method_defined, public_method_defined, private_method_defined = -1;
+static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock,
+  method_defined, public_method_defined, private_method_defined,
+  callerLocationsId, pathId = -1;
 
 static std::unordered_map<long, std::stack<ReturnTrace*>> call_stacks;
 
@@ -176,9 +179,59 @@ generic_arguments_by_value(VALUE value, VALUE klass) {
   return { 0, nullptr };
 }
 
+
+static bool
+process_event_check_path(VALUE path)
+{
+  auto range = RSTRING_LEN(path);
+
+  struct reg_onig_search_args args = {
+      .pos = 0,
+      .range = range,
+  };
+
+  if(rb_reg_onig_match(pathMatcher, path, reg_onig_search, &args, NULL) == ONIG_MISMATCH) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool
+should_process_event(rb_trace_arg_t *trace_arg)
+{
+  if(RB_NIL_P(pathMatcher)) {
+    return true;
+  }
+
+  auto path = rb_tracearg_path(trace_arg);
+  if(process_event_check_path(path)) {
+    return true;
+  }
+
+  auto caller_locations = rb_funcall(rb_mKernel, callerLocationsId, 2, RB_INT2FIX(1), RB_INT2FIX(1));
+  auto caller_location_length = rb_array_len(caller_locations);
+  if(caller_location_length == 0) {
+    return true;
+  }
+
+  auto caller_location = rb_ary_entry(caller_locations, 0);
+  path = rb_funcall(caller_location, pathId, 0);
+  if(process_event_check_path(path)) {
+    return true;
+  }
+
+  return false;
+
+}
+
 static void
 process_call_event(rb_trace_arg_t *trace_arg)
 {
+  if(!should_process_event(trace_arg)) {
+    return;
+  }
+
   ReturnTrace *trace = (struct ReturnTrace *)malloc(sizeof(struct ReturnTrace));
   trace->rescued = false;
 
@@ -350,6 +403,10 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
 static void
 process_return_event(rb_trace_arg_t* trace_arg) {
+  if(!should_process_event(trace_arg)) {
+    return;
+  }
+
   long fiber_id = rb_fiber_current();
 
   auto stack_pair = call_stacks.find(fiber_id);
@@ -398,6 +455,10 @@ process_return_event(rb_trace_arg_t* trace_arg) {
 
 static void
 process_rescued_event(rb_trace_arg_t* trace_arg) {
+  if(!should_process_event(trace_arg)) {
+    return;
+  }
+
   long fiber_id = rb_fiber_current();
 
   auto stack_pair = call_stacks.find(fiber_id);
@@ -445,8 +506,14 @@ process_tracepoint(VALUE trace_point, void *data)
   }
 }
 
-static VALUE start(VALUE self)
+static VALUE start(int argc, VALUE* argv, VALUE self)
 {
+  if(argc == 1) {
+    pathMatcher = argv[0];
+  } else {
+    pathMatcher = Qnil;
+  }
+
   if(!RB_NIL_P(tpCall)) {
     rb_tracepoint_enable(tpCall);
     return Qnil;
@@ -567,9 +634,12 @@ Init_racer(void)
   method_defined = rb_intern("method_defined?");
   public_method_defined = rb_intern("public_method_defined?");
   private_method_defined = rb_intern("private_method_defined?");
+  callerLocationsId = rb_intern("caller_locations");
+  pathId = rb_intern("path");
   rb_global_variable(&tpCall);
+  rb_global_variable(&pathMatcher);
 
-  rb_define_singleton_method(Racer, "start", start, 0);
+  rb_define_singleton_method(Racer, "start", start, -1);
   rb_define_singleton_method(Racer, "stop", stop, 0);
   rb_define_singleton_method(Racer, "flush", flush, 0);
 }
