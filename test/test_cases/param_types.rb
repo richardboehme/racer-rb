@@ -16,6 +16,9 @@ end
 def arr_params((key, bar))
 end
 
+def block_without_parameter
+end
+
 Racer.start
 
 foo(3, nil, "args", "more args", required_kw: 4, optional_kw: :bar, foo: :baz, "test-symbol": /regex/) do
@@ -30,6 +33,11 @@ end
 baz(1, 2, foo: :bar) do
   3 + 4
 end
+
+block_without_parameter do
+end
+
+block_without_parameter(&-> {  })
 
 nilkey(3)
 
@@ -247,6 +255,52 @@ __END__
     type: :keyword_rest
   - !ruby/object:Racer::Trace::Param
     name: :&
+    type_name: !ruby/object:Racer::Trace::Constant
+      name: Proc
+      type: :class
+      path: []
+      generic_arguments: []
+    type: :block
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: Object
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: block_without_parameter
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    type: :class
+    path: []
+    generic_arguments: []
+  params:
+  - !ruby/object:Racer::Trace::Param
+    name:
+    type_name: !ruby/object:Racer::Trace::Constant
+      name: Proc
+      type: :class
+      path: []
+      generic_arguments: []
+    type: :block
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: Object
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: block_without_parameter
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    type: :class
+    path: []
+    generic_arguments: []
+  params:
+  - !ruby/object:Racer::Trace::Param
+    name:
     type_name: !ruby/object:Racer::Trace::Constant
       name: Proc
       type: :class

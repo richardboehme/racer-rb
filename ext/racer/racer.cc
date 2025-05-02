@@ -327,8 +327,11 @@ process_call_event(rb_trace_arg_t *trace_arg)
   auto total_params_size = rb_array_len(parameters);
   trace->params_size = 0;
   // Array of character pointers, each even value is the param name, the following string is the type name
-  trace->params = new Parameter[total_params_size];
+  // There might be one more if the block passed was not added in the parameter declaration
+  trace->params = new Parameter[total_params_size + 1];
   VALUE binding = rb_tracearg_binding(trace_arg);
+
+  bool has_block = false;
 
   for (long i = 0; i < total_params_size; ++i)
   {
@@ -385,6 +388,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
       } else
       if(param_type == blockParam) {
         type = BLOCK;
+        has_block = true;
       } else {
         rb_warn("Unknown parameter type %s\n", rb_id2name(param_type));
         continue;
@@ -406,6 +410,13 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
       auto inspected_params = rb_inspect(parameters);
       rb_warn("Unexpected: Parameter has no name for method %s, parameters: %s", trace->method_name, StringValueCStr(inspected_params));
+    }
+  }
+
+  if(!has_block) {
+    if(rb_funcall(binding, rb_intern("block_given?"), 0) == Qtrue) {
+      trace->params[trace->params_size] = { nullptr, class_to_constant(rb_cProc), BLOCK };
+      trace->params_size++;
     }
   }
 
