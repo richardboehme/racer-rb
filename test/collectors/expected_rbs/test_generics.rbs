@@ -1,5 +1,5 @@
 class ::RBSCollectorTest
-  def foo: (::Array[::String | ::Integer] a, *::RBSCollectorTest::A::B::C::D | ::RBSCollectorTest::A::B::C::E args, ::Hash[::Symbol | ::String, ::Float | ::Regexp] b, **::RBSCollectorTest::A::B::C::D | ::RBSCollectorTest::A::B::C::E options) -> ::Hash[::Symbol | ::RBSCollectorTest::A::B, ::String]
+  def foo: (::Array[::String | ::Array[::Integer | ::String]] a, *::RBSCollectorTest::A::B::C::D | ::RBSCollectorTest::A::B::C::E args, ::Hash[::Symbol | ::String, ::Float | ::Regexp] b, **::RBSCollectorTest::A::B::C::D | ::RBSCollectorTest::A::B::C::E options) -> ::Hash[::Symbol | ::RBSCollectorTest::A::B | ::Hash[::Array[::Integer], ::Integer | ::Symbol], ::String]
 end
 
 class ::RBSCollectorTest::A::B

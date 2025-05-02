@@ -117,13 +117,26 @@ class RBSCollectorTest < Minitest::Test
       trace(
         name: :foo,
         params: [
-          { name: :a, klass: Array, generic_arguments: [[to_constant(String), to_constant(Integer)]], type: :required },
+          {
+            name: :a,
+            klass: Array,
+            generic_arguments: [
+              [to_constant(String), to_constant(Array, generic_arguments: [[to_constant(Integer), to_constant(String)]])]
+            ],
+            type: :required
+          },
           { name: :args, klass: Array, generic_arguments: [[to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :rest },
           { name: :b, klass: Hash, generic_arguments: [[to_constant(Symbol), to_constant(String)], [to_constant(Float), to_constant(Regexp)]], type: :required },
           { name: :options, klass: Hash, generic_arguments: [[to_constant(Symbol)], [to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :keyword_rest }
         ],
         return_type: Hash,
-        return_type_generic_arguments: [[to_constant(Symbol), to_constant(A::B)], [to_constant(String)]]
+        return_type_generic_arguments: [
+          [
+            to_constant(Symbol),
+            to_constant(A::B), to_constant(Hash, generic_arguments: [[to_constant(Array, generic_arguments: [[to_constant(Integer)]])], [to_constant(Integer), to_constant(Symbol)]])
+          ],
+          [to_constant(String)]
+        ]
       )
     ].each { collector.collect(it) }
 

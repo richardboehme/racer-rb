@@ -95,41 +95,48 @@ class_to_constant(VALUE klass, unsigned char generic_argument_size = 0, GenericA
 }
 
 static GenericArgument
-generic_argument_from_union_types(std::vector<VALUE>& types) {
+generic_argument_from_union_types(std::vector<Constant>& types) {
   auto union_size = types.size();
   Constant* union_types = new Constant[union_size];
 
   for(size_t i = 0; i < union_size; ++i) {
-    union_types[i] = class_to_constant(types.at(i));
+    union_types[i] = types.at(i);
   }
 
   return { union_size, union_types };
 }
 
 static int
-hash_to_key_and_value_types(VALUE key, VALUE value, VALUE ary) {
-  rb_ary_push(ary, rb_class_of(key));
-  rb_ary_push(ary, rb_class_of(value));
+hash_to_keys_and_values(VALUE key, VALUE value, VALUE ary) {
+  rb_ary_push(ary, key);
+  rb_ary_push(ary, value);
   return ST_CONTINUE;
 }
 
 std::pair<unsigned char, GenericArgument*>
-generic_arguments_by_value(VALUE value, VALUE klass) {
+generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
+  if(depth == 2) return { 0, nullptr };
+
   if (klass == rb_cArray) {
     auto length = rb_array_len(value);
     if(length > 0) {
       // We need to use a set and a vector to preserve order of the union types
       std::unordered_set<VALUE> types = {};
-      std::vector<VALUE> types_vec = {};
+      std::vector<Constant> types_vec = {};
       auto ary_ptr = RARRAY_CONST_PTR(value);
       // This is O(n) and thus could be pretty slow
       for(auto j = 0; j < rb_array_len(value); ++j) {
         auto item = ary_ptr[j];
 
         auto klass = rb_class_of(item);
-        auto result = types.insert(klass);
-        if(result.second) {
-          types_vec.push_back(klass);
+        auto generic_arguments = generic_arguments_by_value(item, klass, depth + 1);
+        if(generic_arguments.first == 0) {
+          auto result = types.insert(klass);
+          if(result.second) {
+            types_vec.push_back(class_to_constant(klass));
+          }
+        } else {
+          types_vec.push_back(class_to_constant(klass, generic_arguments.first, generic_arguments.second));
         }
       }
 
@@ -145,32 +152,45 @@ generic_arguments_by_value(VALUE value, VALUE klass) {
     if(hash_size > 0) {
 
       std::unordered_set<VALUE> key_types = {};
-      std::vector<VALUE> key_types_vec = {};
+      std::vector<Constant> key_vec = {};
       std::unordered_set<VALUE> value_types = {};
-      std::vector<VALUE> value_types_vec = {};
+      std::vector<Constant> value_vec = {};
 
-      VALUE key_and_value_types = rb_ary_new_capa(hash_size * 2);
-      rb_hash_foreach(value, hash_to_key_and_value_types, key_and_value_types);
-      auto ary_ptr = RARRAY_CONST_PTR(key_and_value_types);
+      VALUE keys_and_values = rb_ary_new_capa(hash_size * 2);
+      rb_hash_foreach(value, hash_to_keys_and_values, keys_and_values);
+      auto ary_ptr = RARRAY_CONST_PTR(keys_and_values);
 
       // This is O(2n) and thus could be pretty slow
       for(auto j = 0; j < hash_size; ++j) {
-        auto key_type = ary_ptr[j * 2];
-        auto key_result = key_types.insert(key_type);
-        if(key_result.second) {
-          key_types_vec.push_back(key_type);
+        auto key = ary_ptr[j * 2];
+        auto key_type = rb_class_of(key);
+        auto key_generics = generic_arguments_by_value(key, key_type, depth + 1);
+        if(key_generics.first == 0) {
+          auto key_result = key_types.insert(key_type);
+          if(key_result.second) {
+            key_vec.push_back(class_to_constant(key_type));
+          }
+        } else {
+          key_vec.push_back(class_to_constant(key_type, key_generics.first, key_generics.second));
         }
 
-        auto value_type = ary_ptr[j * 2 + 1];
-        auto value_result = value_types.insert(value_type);
-        if(value_result.second) {
-          value_types_vec.push_back(value_type);
+
+        auto value = ary_ptr[j * 2 + 1];
+        auto value_type = rb_class_of(value);
+        auto value_generics = generic_arguments_by_value(value, value_type, depth + 1);
+        if(value_generics.first == 0) {
+          auto value_result = value_types.insert(value_type);
+          if(value_result.second) {
+            value_vec.push_back(class_to_constant(value_type));
+          }
+        } else {
+          value_vec.push_back(class_to_constant(value_type, value_generics.first, value_generics.second));
         }
       }
 
       auto generic_arguments = new GenericArgument[2];
-      generic_arguments[0] = generic_argument_from_union_types(key_types_vec);
-      generic_arguments[1] = generic_argument_from_union_types(value_types_vec);
+      generic_arguments[0] = generic_argument_from_union_types(key_vec);
+      generic_arguments[1] = generic_argument_from_union_types(value_vec);
 
       return { 2, generic_arguments };
     }
