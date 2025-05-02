@@ -3,7 +3,7 @@
 def foo(a, b = 1, *args, kw:, kw2: 2, **kwargs, &block)
 end
 
-def bar(*, **)
+def bar(*, **, &)
 end
 
 def baz(...)

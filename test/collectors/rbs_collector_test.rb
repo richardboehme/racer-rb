@@ -195,6 +195,17 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_blocks
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :foo, params: [{ name: :block, klass: Proc, type: :block }]),
+      trace(name: :foo, params: [{ name: :block, klass: NilClass, type: :block }]),
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?

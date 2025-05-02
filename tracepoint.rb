@@ -1,11 +1,11 @@
 # tp2 = TracePoint.new(:call) do |tp|
 #   p [:call, caller[0..2], Thread.current.native_thread_id]
 # end
-require_relative "./test"
 
 tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
-  p caller_locations(0, 1).first.path
+  binding.irb
+  # p caller_locations(0, 1).first.path
   # p [
   #   tp.path,
   #   tp.lineno,
@@ -24,54 +24,10 @@ tp.enable
 
 # Racer.start
 
-# class Bar
-#   def self.foo
-#   end
-
-#   def foo(c, d)
-#   end
-# end
-
-# class Foo < Bar
-#   def self.foo(a)
-#     super()
-#   end
-
-#   def foo(a, b)
-#     super
-#     [a, b]
-#   end
-# end
-
-# # f = Foo.new
-
-# Foo.new.foo(1, 2)
-
-# module A
-#   def foo
-#   end
-
-#   def self.bar
-
-#   end
-# end
-
-# class B
-#   extend A
-# end
-
-# class C
-#   include A
-# end
-
-# A.bar
-foo
-
-Foo.foo
-
-class Bar < Foo
-  foo
+def foo(&block)
 end
+
+foo
 
 # B.foo
 # C.new.foo

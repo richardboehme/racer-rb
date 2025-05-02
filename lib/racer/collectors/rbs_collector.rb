@@ -13,9 +13,6 @@ module Racer::Collectors
     def collect(trace)
       push_constant_to_results(trace.method_owner)
 
-      # TODO: We probably want to "enhance" those types (say monkey patches) but we'd at least need to copy their type params (generics)
-      # return if @has_types.include?(trace.method_owner.name)
-
       method_type_key =
         case trace.method_kind
         when :instance
@@ -177,16 +174,16 @@ module Racer::Collectors
         name: name.to_sym,
         kind:,
         overloads: overloads.map do |params, traces|
-          block_param = params.find { it.type == :block }
+          block_params = traces.flat_map(&:params).select { it.type == :block }
 
           RBS::AST::Members::MethodDefinition::Overload.new(
             method_type: RBS::MethodType.new(
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(params),
-                return_type: to_rbs_type(*traces.map(&:return_type))
+                return_type: to_rbs_type(*traces.map(&:return_type).uniq)
               ),
-              block: block_param ? to_block(block_param) : nil,
+              block: block_params.empty? ? nil : to_block(block_params),
               location: nil
             ),
             annotations: []
@@ -274,10 +271,12 @@ module Racer::Collectors
       end
     end
 
-    def to_block(block_param)
+    def to_block(block_params)
+      required = block_params.none? { it.type_name.name == "NilClass" }
+
       RBS::Types::Block.new(
         type: RBS::Types::UntypedFunction.new(return_type: RBS::Types::Bases::Any.new(location: nil)),
-        required: true
+        required:
       )
     end
 
