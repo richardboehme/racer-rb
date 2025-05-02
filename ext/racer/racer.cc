@@ -18,6 +18,7 @@ static int socketFd = 0;
 
 static VALUE Racer = Qnil;
 static VALUE pathMatcher = Qnil;
+static long maxGenericDepth = 1;
 
 static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, nokeyParam, blockParam, anonRest, anonKeyrest, anonBlock,
   method_defined, public_method_defined, private_method_defined,
@@ -115,7 +116,7 @@ hash_to_keys_and_values(VALUE key, VALUE value, VALUE ary) {
 
 std::pair<unsigned char, GenericArgument*>
 generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
-  if(depth == 2) return { 0, nullptr };
+  if(depth == maxGenericDepth) return { 0, nullptr };
 
   if (klass == rb_cArray) {
     auto length = rb_array_len(value);
@@ -526,13 +527,15 @@ process_tracepoint(VALUE trace_point, void *data)
   }
 }
 
-static VALUE start(int argc, VALUE* argv, VALUE self)
+static VALUE start(VALUE self, VALUE arg_pathMatcher, VALUE arg_maxGenericDepth)
 {
-  if(argc == 1) {
-    pathMatcher = argv[0];
-  } else {
-    pathMatcher = Qnil;
+  if(!RB_NIL_P(arg_pathMatcher)) {
+    Check_Type(arg_pathMatcher, T_REGEXP);
   }
+  pathMatcher = arg_pathMatcher;
+
+  Check_Type(arg_maxGenericDepth, T_FIXNUM);
+  maxGenericDepth = rb_fix2long(arg_maxGenericDepth);
 
   if(!RB_NIL_P(tpCall)) {
     rb_tracepoint_enable(tpCall);
@@ -659,7 +662,7 @@ Init_racer(void)
   rb_global_variable(&tpCall);
   rb_global_variable(&pathMatcher);
 
-  rb_define_singleton_method(Racer, "start", start, -1);
+  rb_define_singleton_method(Racer, "__c_start", start, 2);
   rb_define_singleton_method(Racer, "stop", stop, 0);
   rb_define_singleton_method(Racer, "flush", flush, 0);
 }

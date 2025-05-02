@@ -4,12 +4,12 @@ end
 def bar
 end
 
-Racer.start(/\Aapp\//)
+Racer.start(path_regex: /\Aapp\//)
 foo
 Racer.stop
 
 # Files are written as tmp files
-Racer.start(/tmp/)
+Racer.start(path_regex: /tmp/)
 bar
 Racer.stop
 

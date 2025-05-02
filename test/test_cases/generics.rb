@@ -18,6 +18,10 @@ foo({a: [1, 2], b: { a: 1, b: [3] }, [1, 2, [""]] => :foo })
 
 Racer.stop
 
+Racer.start(max_generic_depth: 3)
+foo([[[3, []]]])
+Racer.stop
+
 __END__
 ---
 - !ruby/object:Racer::Trace
@@ -439,4 +443,67 @@ __END__
           type: :class
           path: []
           generic_arguments: []
+    type: :required
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: Object
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: foo
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: Array
+    type: :class
+    path: []
+    generic_arguments:
+    - - !ruby/object:Racer::Trace::Constant
+        name: Array
+        type: :class
+        path: []
+        generic_arguments:
+        - - !ruby/object:Racer::Trace::Constant
+            name: Array
+            type: :class
+            path: []
+            generic_arguments:
+            - - !ruby/object:Racer::Trace::Constant
+                name: Integer
+                type: :class
+                path: []
+                generic_arguments: []
+              - !ruby/object:Racer::Trace::Constant
+                name: Array
+                type: :class
+                path: []
+                generic_arguments: []
+  params:
+  - !ruby/object:Racer::Trace::Param
+    name: :a
+    type_name: !ruby/object:Racer::Trace::Constant
+      name: Array
+      type: :class
+      path: []
+      generic_arguments:
+      - - !ruby/object:Racer::Trace::Constant
+          name: Array
+          type: :class
+          path: []
+          generic_arguments:
+          - - !ruby/object:Racer::Trace::Constant
+              name: Array
+              type: :class
+              path: []
+              generic_arguments:
+              - - !ruby/object:Racer::Trace::Constant
+                  name: Integer
+                  type: :class
+                  path: []
+                  generic_arguments: []
+                - !ruby/object:Racer::Trace::Constant
+                  name: Array
+                  type: :class
+                  path: []
+                  generic_arguments: []
     type: :required

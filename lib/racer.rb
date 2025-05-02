@@ -30,4 +30,8 @@ module Racer
   rescue Errno::ESRCH
     # Agent already stopped
   end
+
+  def self.start(path_regex: nil, max_generic_depth: 2)
+    __c_start(path_regex, max_generic_depth)
+  end
 end
