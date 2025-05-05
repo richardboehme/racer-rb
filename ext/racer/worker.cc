@@ -33,6 +33,64 @@ int size_of_constant(Constant& constant) {
   return size;
 }
 
+int size_of_block_trace(ReturnTrace*);
+
+int size_of_params(ReturnTrace* trace) {
+  auto size = 1;
+  for(auto i = 0; i < trace->params_size; ++i) {
+    size += 2 + size_of_constant(trace->params[i].type_name);
+  }
+  if(trace->block_param.has_value()) {
+    size += 2;
+    for(auto block_trace : (*(trace->block_param)).block_traces) {
+      size += size_of_block_trace(block_trace);
+    }
+  }
+  return size;
+}
+
+int size_of_block_trace(ReturnTrace* trace) {
+  return size_of_constant(trace->block_self_type.value()) + size_of_constant(trace->return_type) + size_of_params(trace);
+}
+
+void write_params(json_object*, ReturnTrace*);
+
+void write_block_trace(json_object* json_array, ReturnTrace* trace) {
+  write_constant(json_array, trace->block_self_type.value());
+  write_constant(json_array, trace->return_type);
+  write_params(json_array, trace);
+}
+
+void write_params(json_object* json_array, ReturnTrace* trace) {
+  json_object_array_add(json_array, json_object_new_int64(trace->params_size));
+
+  for (long i = 0; i < trace->params_size; ++i)
+  {
+    auto param = trace->params[i];
+    if(param.name) {
+      json_object_array_add(json_array, json_object_new_string(param.name));
+    } else {
+      json_object_array_add(json_array, json_object_new_null());
+    }
+    json_object_array_add(json_array, json_object_new_int(param.param_type));
+
+    write_constant(json_array, param.type_name);
+  }
+
+  if(trace->block_param.has_value()) {
+    auto block_param = *(trace->block_param);
+    if(block_param.name) {
+      json_object_array_add(json_array, json_object_new_string(block_param.name));
+    } else {
+      json_object_array_add(json_array, json_object_new_null());
+    }
+    json_object_array_add(json_array, json_object_new_uint64(block_param.block_traces.size()));
+    for(auto block_trace : block_param.block_traces) {
+      write_block_trace(json_array, block_trace);
+    }
+  }
+}
+
 void *init_worker(void *arg)
 {
   auto *worker_data = static_cast<WorkerData *>(arg);
@@ -54,11 +112,7 @@ void *init_worker(void *arg)
 
     trace = static_cast<ReturnTrace *>(message->data);
 
-
-    auto array_size = 3 + size_of_constant(trace->return_type) + size_of_constant(trace->method_owner);
-    for(auto i = 0; i < trace->params_size; ++i) {
-      array_size += 2 + size_of_constant(trace->params[i].type_name);
-    }
+    auto array_size = 3 + size_of_constant(trace->return_type) + size_of_constant(trace->method_owner) + size_of_params(trace);
     auto* json_array = json_object_new_array_ext(array_size);
 
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
@@ -69,20 +123,7 @@ void *init_worker(void *arg)
     write_constant(json_array, trace->return_type);
     write_constant(json_array, trace->method_owner);
 
-    json_object_array_add(json_array, json_object_new_int64(trace->params_size));
-
-    for (long i = 0; i < trace->params_size; ++i)
-    {
-      auto param = trace->params[i];
-      if(param.name) {
-        json_object_array_add(json_array, json_object_new_string(param.name));
-      } else {
-        json_object_array_add(json_array, json_object_new_null());
-      }
-      json_object_array_add(json_array, json_object_new_int(param.param_type));
-
-      write_constant(json_array, param.type_name);
-    }
+    write_params(json_array, trace);
 
     auto json_string = json_object_to_json_string_ext(json_array, JSON_C_TO_STRING_PLAIN);
 

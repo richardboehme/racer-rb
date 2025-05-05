@@ -1,5 +1,5 @@
 class Racer::Trace
-  attr_reader :method_owner, :method_name, :method_kind, :method_visibility, :return_type, :params
+  attr_reader :method_owner, :method_name, :method_kind, :method_visibility, :return_type, :params, :block_param
 
   KINDS = [
     :instance,
@@ -12,13 +12,14 @@ class Racer::Trace
     :protected
   ].freeze
 
-  def initialize(method_owner:, method_name:, method_kind:, method_visibility:, return_type:, params:)
+  def initialize(method_owner:, method_name:, method_kind:, method_visibility:, return_type:, params:, block_param: nil)
     @method_owner = method_owner
     @method_name = method_name
     @method_kind = method_kind
     @method_visibility = method_visibility
     @return_type = return_type
     @params = params
+    @block_param = block_param
   end
 
   class Constant
@@ -64,8 +65,7 @@ class Racer::Trace
       :rest,
       :keyword_required,
       :keyword_optional,
-      :keyword_rest,
-      :block
+      :keyword_rest
     ].freeze
 
 
@@ -78,21 +78,30 @@ class Racer::Trace
     def ==(other)
       other.name == name && other.type_name == type_name && other.type == type
     end
-
-    def eql?(other)
-      if type == :block
-        other.type == type
-      else
-       self == other
-      end
-    end
+    alias eql? ==
 
     def hash
-      if type == :block
-        type.hash
-      else
-        [name, type_name, type].hash
-      end
+      [name, type_name, type].hash
+    end
+  end
+
+  class BlockParam
+    attr_reader :name, :traces
+
+    def initialize(name:, traces:)
+      @name = name
+      @traces = traces
+    end
+  end
+
+  class BlockTrace
+    attr_reader :self_type, :return_type, :params, :block_param
+
+    def initialize(return_type:, params:, self_type: nil, block_param: nil)
+      @return_type = return_type
+      @params = params
+      @block_param = block_param
+      @self_type = self_type
     end
   end
 end

@@ -83,19 +83,21 @@ class RBSCollectorTest < Minitest::Test
     collector = Racer::Collectors::RBSCollector.new
 
     [
-      trace(name: :foo, params: [
-        { name: :a, type: :required },
-        { name: :b, type: :optional },
-        { name: :args, klass: Array, type: :rest },
-        { name: :c, type: :keyword_required },
-        { name: :d, type: :keyword_optional },
-        { name: :options, klass: Hash, type: :keyword_rest },
-        { name: :block, klass: Proc, type: :block },
-      ]),
+      trace(
+        name: :foo,
+        params: [
+          { name: :a, type: :required },
+          { name: :b, type: :optional },
+          { name: :args, klass: Array, type: :rest },
+          { name: :c, type: :keyword_required },
+          { name: :d, type: :keyword_optional },
+          { name: :options, klass: Hash, type: :keyword_rest }
+        ],
+        block_param: to_block_param(traces: [])
+      ),
       trace(name: :bar, params: [
         { name: :*, klass: Array, type: :rest },
-        { name: :**, klass: Hash, type: :keyword_rest },
-        { name: :&, klass: Proc, type: :block }
+        { name: :**, klass: Hash, type: :keyword_rest }
       ]),
       trace(name: :baz, params: [
         { name: :a, type: :required },
@@ -212,8 +214,33 @@ class RBSCollectorTest < Minitest::Test
     collector = Racer::Collectors::RBSCollector.new
 
     [
-      trace(name: :foo, params: [{ name: :block, klass: Proc, type: :block }]),
-      trace(name: :foo, params: [{ name: :block, klass: NilClass, type: :block }]),
+      trace(
+        name: :foo,
+        block_param: to_block_param(
+          traces: [
+            {
+              params: [
+                { name: :a, klass: String, type: :required },
+                { name: :b, klass: Integer, type: :optional }
+              ],
+              return_type: NilClass,
+              self_type: String
+            },
+            {
+              params: [
+                { name: :a, klass: Symbol, type: :required },
+                { name: :b, klass: Integer, type: :optional }
+              ],
+              return_type: String,
+              self_type: Integer
+            },
+          ]
+        )
+      ),
+      trace(
+        name: :foo,
+        block_param: to_block_param(traces: [])
+      )
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)
@@ -270,7 +297,8 @@ class RBSCollectorTest < Minitest::Test
     owner: RBSCollectorTest,
     kind: :instance,
     visibility: :public,
-    params: []
+    params: [],
+    block_param: nil
   )
     Racer::Trace.new(
       method_owner: to_constant(owner),
@@ -278,7 +306,8 @@ class RBSCollectorTest < Minitest::Test
       method_kind: kind,
       method_visibility: visibility,
       return_type: to_constant(return_type, generic_arguments: return_type_generic_arguments),
-      params: params.map { to_param(**it) }
+      params: params.map { to_param(**it) },
+      block_param:
     )
   end
 
@@ -302,6 +331,22 @@ class RBSCollectorTest < Minitest::Test
       name:,
       type_name: to_constant(klass, generic_arguments:),
       type:
+    )
+  end
+
+  def to_block_param(traces:, name: :block)
+    Racer::Trace::BlockParam.new(
+      name:,
+      traces: traces.map { to_block_trace(**it) }
+    )
+  end
+
+  def to_block_trace(params: [], self_type: nil, return_type: NilClass, block_param: nil)
+    Racer::Trace::BlockTrace.new(
+      self_type: self_type && to_constant(self_type),
+      params: params.map { to_param(**it) },
+      return_type: to_constant(return_type),
+      block_param:
     )
   end
 end

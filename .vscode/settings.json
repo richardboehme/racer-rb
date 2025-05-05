@@ -22,6 +22,7 @@
     "algorithm": "cpp",
     "memory": "cpp",
     "initializer_list": "cpp",
-    "numeric": "cpp"
+    "numeric": "cpp",
+    "optional": "cpp"
   }
 }

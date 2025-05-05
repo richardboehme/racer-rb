@@ -30,3 +30,4 @@ __END__
     path: []
     generic_arguments: []
   params: []
+  block_param:

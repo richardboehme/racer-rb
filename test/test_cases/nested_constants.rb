@@ -55,3 +55,4 @@ __END__
         type: :class
       generic_arguments: []
     type: :required
+  block_param:

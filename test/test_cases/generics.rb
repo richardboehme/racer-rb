@@ -103,6 +103,7 @@ __END__
             type: :module
           generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -192,6 +193,7 @@ __END__
           path: []
           generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -215,6 +217,7 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -238,6 +241,7 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -311,6 +315,7 @@ __END__
               path: []
               generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -444,6 +449,7 @@ __END__
           path: []
           generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -507,3 +513,4 @@ __END__
                   path: []
                   generic_arguments: []
     type: :required
+  block_param:

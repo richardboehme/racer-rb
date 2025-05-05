@@ -10,26 +10,34 @@ TracePoint.new(:return, :call, :rescue) do |tp|
   end
 end#.enable
 
-
-class A
-  class B
+def bar(&block)
+  block.call(1, 2, kw: 3) do |&inner_block|
+    inner_block.call
   end
 end
 
-class Foo
-  module Bar
-    class Baz
-      def self.foo(a)
-        A::B.new
-      end
-    end
-  end
+def foo(&block)
+  # other_block = -> {}
+  # other_block.call()
+  # yield(1, "string", kw: 1, kw2: :symbol)
+  # yield("1", /tex/, kw: 3.4)
+  bar(&block)
 end
+
 
 Racer.start_agent
 Racer.start
 
-Foo::Bar::Baz.foo({ a: 1, b: 2, c: "3", "4" => 5, 6 => 7 })
-
+foo do |a, b = 1, kw:, kw2: nil, &block|
+  # other_block = -> {}
+  # other_block.call()
+  if block
+    block.call do
+      6
+    end
+  else
+    # [a, b, kw, kw2]
+  end
+end
 
 Racer.stop

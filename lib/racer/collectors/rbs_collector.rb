@@ -24,7 +24,7 @@ module Racer::Collectors
       @results[trace.method_owner.name][method_type_key][trace.method_name] ||= []
 
       @results[trace.method_owner.name][method_type_key][trace.method_name].each do |traces|
-        if traces.params == trace.params && traces.return_type == trace.return_type
+        if traces.params == trace.params && traces.return_type == trace.return_type && traces.block_param == trace.block_param
           return
         end
       end
@@ -174,14 +174,14 @@ module Racer::Collectors
         name: name.to_sym,
         kind:,
         overloads: overloads.map do |params, traces|
-          block_params = traces.flat_map(&:params).select { it.type == :block }
+          block_params = traces.filter_map(&:block_param)
 
           RBS::AST::Members::MethodDefinition::Overload.new(
             method_type: RBS::MethodType.new(
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(params),
-                return_type: to_rbs_type(*traces.map(&:return_type).uniq)
+                return_type: to_rbs_type(*traces.map(&:return_type))
               ),
               block: block_params.empty? ? nil : to_block(block_params),
               location: nil
@@ -200,7 +200,12 @@ module Racer::Collectors
       )
     end
 
-    def method_parameters(params)
+    def method_parameters(*param_sets)
+      size = param_sets.first.size
+      if param_sets.any? { it.size != size }
+        warn "Received param sets with different sizes"
+      end
+
       {
         required_positionals: [],
         optional_positionals: [],
@@ -210,16 +215,22 @@ module Racer::Collectors
         optional_keywords: {},
         rest_keywords: nil
       }.tap do |parameters|
-        params.each do |param|
-          case param.type
+        size.times do |n|
+          # TODO-Racer: Rethink the data structure here...
+          type = param_sets.first[n].type
+          name = param_sets.first[n].name
+          types = param_sets.map { it[n].type_name }
+          generic_arguments = types.first.generic_arguments
+
+          case type
           when :required, :optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_rbs_type(param.type_name),
-                name: param.name
+                type: to_rbs_type(*types),
+                name:
               )
 
-            if param.type == :required
+            if type == :required
               if parameters[:rest_positionals]
                 parameters[:trailing_positionals] << rbs_param
               else
@@ -230,8 +241,8 @@ module Racer::Collectors
             end
           when :rest
             type =
-              if param.type_name.generic_arguments.size == 1
-                to_rbs_type(*param.type_name.generic_arguments[0])
+              if generic_arguments.size == 1
+                to_rbs_type(*generic_arguments[0])
               else
                 RBS::Types::Bases::Any.new(location: nil)
               end
@@ -239,24 +250,24 @@ module Racer::Collectors
             parameters[:rest_positionals] =
               RBS::Types::Function::Param.new(
                 type:,
-                name: param.name == :* ? nil : param.name
+                name: name == :* ? nil : name
               )
           when :keyword_required, :keyword_optional
             rbs_param =
               RBS::Types::Function::Param.new(
-                type: to_rbs_type(param.type_name),
+                type: to_rbs_type(*types),
                 name: nil
               )
 
-            if param.type == :keyword_required
-              parameters[:required_keywords][param.name] = rbs_param
+            if type == :keyword_required
+              parameters[:required_keywords][name] = rbs_param
             else
-              parameters[:optional_keywords][param.name] = rbs_param
+              parameters[:optional_keywords][name] = rbs_param
             end
           when :keyword_rest
             type =
-              if param.type_name.generic_arguments.size == 2
-                to_rbs_type(*param.type_name.generic_arguments[1])
+              if generic_arguments.size == 2
+                to_rbs_type(*generic_arguments[1])
               else
                 RBS::Types::Bases::Any.new(location: nil)
               end
@@ -264,18 +275,36 @@ module Racer::Collectors
             parameters[:rest_keywords] =
               RBS::Types::Function::Param.new(
                 type:,
-                name: param.name == :** ? nil : param.name
+                name: name == :** ? nil : name
               )
           end
         end
       end
     end
 
+    # Converts block parameters of a method to a block type
+    # Note: RBS does not support blocks that get other blocks passed so we cannot document
+    # "nested" block params.
     def to_block(block_params)
-      required = block_params.none? { it.type_name.name == "NilClass" }
+      required = block_params.any? { !it.traces.empty? }
+
+      traces = block_params.flat_map(&:traces)
+
+      function =
+        if traces.empty?
+          RBS::Types::UntypedFunction.new(return_type: RBS::Types::Bases::Any.new(location: nil))
+        else
+          RBS::Types::Function.new(
+            **method_parameters(*traces.map(&:params)),
+            return_type: to_rbs_type(*traces.map(&:return_type))
+          )
+        end
+
+      self_types = traces.filter_map(&:self_type)
 
       RBS::Types::Block.new(
-        type: RBS::Types::UntypedFunction.new(return_type: RBS::Types::Bases::Any.new(location: nil)),
+        type: function,
+        self_type: self_types.empty? ? nil : to_rbs_type(*self_types),
         required:
       )
     end
@@ -285,6 +314,8 @@ module Racer::Collectors
     end
 
     def to_rbs_type(*constants)
+      constants.uniq!
+
       if constants.size > 1
         bool_union = [false, false]
         constants.each do |constant|

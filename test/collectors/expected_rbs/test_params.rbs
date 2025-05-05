@@ -1,7 +1,7 @@
 class ::RBSCollectorTest
-  def foo: (nil a, ?nil b, *untyped args, c: nil, ?d: nil, **untyped options) { (?) -> untyped } -> nil
+  def foo: (nil a, ?nil b, *untyped args, c: nil, ?d: nil, **untyped options) ?{ (?) -> untyped } -> nil
 
-  def bar: (*untyped, **untyped) { (?) -> untyped } -> nil
+  def bar: (*untyped, **untyped) -> nil
 
   def baz: (nil a, *untyped args, nil b) -> nil
 

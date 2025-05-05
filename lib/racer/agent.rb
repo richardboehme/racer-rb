@@ -60,7 +60,7 @@ class Racer::Agent
         # TODO: Is this an error? I would expect it waits until there is something to read?
         next if received_message.nil?
 
-        # File.write("messages", "#{received_message}\n\n", mode: "a+")
+        File.write("messages", "#{received_message}\n\n", mode: "a+")
 
         *messages, last_message = received_message.split("\0")
 
@@ -107,8 +107,11 @@ class Racer::Agent
           return_type = shift_constant(data)
           method_owner = shift_constant(data)
 
-          params_size = data.shift
-          params = params_size.times.map { shift_param(data) }
+          params, block_param = shift_params(data)
+
+          unless data.empty?
+            warn "Received more data then expected: #{data}"
+          end
 
           @queue.push(
             Racer::Trace.new(
@@ -117,12 +120,40 @@ class Racer::Agent
               method_kind:,
               method_visibility:,
               return_type:,
-              params:
+              params:,
+              block_param:,
             )
           )
         end
       end
     end
+  end
+
+  def shift_block_trace(data)
+    self_type = shift_constant(data)
+    return_type = shift_constant(data)
+    params, block_param = shift_params(data)
+
+    Racer::Trace::BlockTrace.new(self_type:, return_type:, params:, block_param:)
+  end
+
+  def shift_params(data)
+    params_size = data.shift
+    params = params_size.times.map { shift_param(data) }
+
+    block_param =
+      unless data.empty?
+        block_name = data.shift
+        traces_count = data.shift
+        traces = traces_count.times.map { shift_block_trace(data) }
+
+        Racer::Trace::BlockParam.new(
+          name: block_name,
+          traces:
+        )
+      end
+
+    [params, block_param]
   end
 
   def shift_param(data)

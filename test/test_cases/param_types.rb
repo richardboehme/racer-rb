@@ -131,14 +131,9 @@ __END__
           path: []
           generic_arguments: []
     type: :keyword_rest
-  - !ruby/object:Racer::Trace::Param
-    name: :block
-    type_name: !ruby/object:Racer::Trace::Constant
-      name: Proc
-      type: :class
-      path: []
-      generic_arguments: []
-    type: :block
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name: block
+    traces: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -183,6 +178,7 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -214,14 +210,9 @@ __END__
       path: []
       generic_arguments: []
     type: :keyword_rest
-  - !ruby/object:Racer::Trace::Param
-    name: :&
-    type_name: !ruby/object:Racer::Trace::Constant
-      name: Proc
-      type: :class
-      path: []
-      generic_arguments: []
-    type: :block
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name:
+    traces: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -253,14 +244,9 @@ __END__
       path: []
       generic_arguments: []
     type: :keyword_rest
-  - !ruby/object:Racer::Trace::Param
-    name: :&
-    type_name: !ruby/object:Racer::Trace::Constant
-      name: Proc
-      type: :class
-      path: []
-      generic_arguments: []
-    type: :block
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name:
+    traces: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -275,15 +261,10 @@ __END__
     type: :class
     path: []
     generic_arguments: []
-  params:
-  - !ruby/object:Racer::Trace::Param
+  params: []
+  block_param: !ruby/object:Racer::Trace::BlockParam
     name:
-    type_name: !ruby/object:Racer::Trace::Constant
-      name: Proc
-      type: :class
-      path: []
-      generic_arguments: []
-    type: :block
+    traces: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -298,15 +279,10 @@ __END__
     type: :class
     path: []
     generic_arguments: []
-  params:
-  - !ruby/object:Racer::Trace::Param
+  params: []
+  block_param: !ruby/object:Racer::Trace::BlockParam
     name:
-    type_name: !ruby/object:Racer::Trace::Constant
-      name: Proc
-      type: :class
-      path: []
-      generic_arguments: []
-    type: :block
+    traces: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -330,6 +306,7 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
@@ -353,3 +330,4 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:

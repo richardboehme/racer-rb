@@ -1,6 +1,6 @@
 require "mkmf"
 
-$CXXFLAGS += " -std=c++14 "
+$CXXFLAGS += " -std=c++17 "
 $CXXFLAGS += " -ggdb3 -Og "
 
 # Makes all symbols private by default to avoid unintended conflict

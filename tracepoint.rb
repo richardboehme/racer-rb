@@ -2,11 +2,9 @@
 #   p [:call, caller[0..2], Thread.current.native_thread_id]
 # end
 
-tp = TracePoint.new(:call) do |tp|
+$tp = TracePoint.new(:b_call, :b_return) do |tp|
   # p [:return, caller[0..2]]
-  binding.irb
-  # p caller_locations(0, 1).first.path
-  # p [
+  p [tp.self]
   #   tp.path,
   #   tp.lineno,
   #   tp.callee_id, # name of method that was called -> in path:lineno
@@ -18,17 +16,37 @@ tp = TracePoint.new(:call) do |tp|
 end
 # tp2.enable
 # require_relative "lib/racer"
-tp.enable
 
 # Racer.start_agent
 
 # Racer.start
 
-def foo(&block)
+# class Foo
+#   def self.foo(&block)
+#     block.call
+#   end#
+
+
+#   foo do |a|
+#     a
+#   end
+# end
+
+class Foo
+  def self.foo(&block)
+    $tp.enable(target: block)
+    pro = -> () {}
+    pro.()
+    p "in foo #{block.binding.eval("self")}"
+
+    instance_eval(&block)
+  end
 end
 
-foo
-
+Foo.foo do
+  1.tap {}
+  1
+end
 # B.foo
 # C.new.foo
 
