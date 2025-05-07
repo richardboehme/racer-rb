@@ -18,6 +18,7 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -26,6 +27,7 @@ __END__
   method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
+    singleton: false
     type: :class
     path: []
     generic_arguments: []

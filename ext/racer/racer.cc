@@ -587,9 +587,16 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
     assign_parameters(trace, trace_arg);
 
     auto self = rb_tracearg_self(trace_arg);
-    auto self_class = rb_class_of(self);
-    auto generics = generic_arguments_by_value(self, self_class);
-    trace->block_self_type = class_to_constant(self_class, generics.first, generics.second);
+    auto self_type = rb_type(self);
+    if(self_type == T_CLASS || self_type == T_MODULE) {
+      auto constant = class_to_constant(self);
+      constant.singleton = true;
+      trace->block_self_type = constant;
+    } else {
+      auto self_class = rb_class_of(self);
+      auto generics = generic_arguments_by_value(self, self_class);
+      trace->block_self_type = class_to_constant(self_class, generics.first, generics.second);
+    }
   }
 
   block_param.current_block_call_stack.push_back(trace);

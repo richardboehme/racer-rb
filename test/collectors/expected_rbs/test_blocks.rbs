@@ -1,3 +1,5 @@
 class ::RBSCollectorTest
   def foo: () { (::String | ::Symbol a, ?::Integer b) [self: ::String | ::Integer] -> (nil | ::String) } -> nil
+
+  def bar: () { () [self: singleton(::RBSCollectorTest)] -> nil } -> nil
 end

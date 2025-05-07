@@ -23,6 +23,7 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: B
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -31,6 +32,7 @@ __END__
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -39,6 +41,7 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: C
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -47,6 +50,7 @@ __END__
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::Constant
     name: NilClass
+    singleton: false
     type: :class
     path: []
     generic_arguments: []

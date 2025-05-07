@@ -44,6 +44,7 @@ typedef struct Constant {
   Path* path { nullptr };
   unsigned char generic_argument_count { 0 };
   GenericArgument* generic_arguments { nullptr };
+  bool singleton { false };
 } Constant;
 
 struct GenericArgument {

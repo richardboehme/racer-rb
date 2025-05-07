@@ -240,6 +240,10 @@ class RBSCollectorTest < Minitest::Test
       trace(
         name: :foo,
         block_param: to_block_param(traces: [])
+      ),
+      trace(
+        name: :bar,
+        block_param: to_block_param(traces: [{ self_type: to_constant(RBSCollectorTest, singleton: true) }])
       )
     ].each { collector.collect(it) }
 
@@ -311,10 +315,11 @@ class RBSCollectorTest < Minitest::Test
     )
   end
 
-  def to_constant(klass, generic_arguments: [])
+  def to_constant(klass, generic_arguments: [], singleton: false)
     Racer::Trace::Constant.new(
       name: klass.name,
       type: klass.is_a?(Class) ? :class : :module,
+      singleton:,
       path: klass.name.split("::")[...-1].to_enum.with_object(+"").map do |fragment_name, current_path|
         current_path << "::#{fragment_name}"
         Racer::Trace::Constant::PathFragment.new(
@@ -343,7 +348,7 @@ class RBSCollectorTest < Minitest::Test
 
   def to_block_trace(params: [], self_type: nil, return_type: NilClass, block_param: nil)
     Racer::Trace::BlockTrace.new(
-      self_type: self_type && to_constant(self_type),
+      self_type: self_type && (self_type.is_a?(Racer::Trace::Constant) ? self_type : to_constant(self_type)),
       params: params.map { to_param(**it) },
       return_type: to_constant(return_type),
       block_param:

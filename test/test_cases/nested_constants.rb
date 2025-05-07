@@ -17,6 +17,7 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: A::B::C
+    singleton: false
     type: :class
     path:
     - !ruby/object:Racer::Trace::Constant::PathFragment
@@ -31,6 +32,7 @@ __END__
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::Constant
     name: A::B::C
+    singleton: false
     type: :class
     path:
     - !ruby/object:Racer::Trace::Constant::PathFragment
@@ -45,6 +47,7 @@ __END__
     name: :a
     type_name: !ruby/object:Racer::Trace::Constant
       name: A::B::C
+      singleton: false
       type: :class
       path:
       - !ruby/object:Racer::Trace::Constant::PathFragment

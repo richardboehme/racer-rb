@@ -23,15 +23,16 @@ class Racer::Trace
   end
 
   class Constant
-    attr_reader :name, :type, :path, :generic_arguments
+    attr_reader :name, :singleton, :type, :path, :generic_arguments
 
     TYPES = [
       :module,
       :class
     ].freeze
 
-    def initialize(name:, type:, path:, generic_arguments: [])
+    def initialize(name:, singleton:, type:, path:, generic_arguments: [])
       @name = name
+      @singleton = singleton
       @type = type
       @path = path
       @generic_arguments = generic_arguments

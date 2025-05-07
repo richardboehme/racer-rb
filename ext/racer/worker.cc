@@ -6,6 +6,7 @@
 void write_constant(json_object* json_array, Constant& constant) {
   json_object_array_add(json_array, json_object_new_string(constant.name));
   json_object_array_add(json_array, json_object_new_int(constant.type));
+  json_object_array_add(json_array, json_object_new_boolean(constant.singleton));
   json_object_array_add(json_array, json_object_new_int64(constant.path_size));
 
   for(auto i = 0; i < constant.path_size; ++i) {
@@ -24,7 +25,7 @@ void write_constant(json_object* json_array, Constant& constant) {
 }
 
 int size_of_constant(Constant& constant) {
-  auto size = 4 + constant.path_size * 2 + constant.generic_argument_count;
+  auto size = 5 + constant.path_size * 2 + constant.generic_argument_count;
   for(auto i = 0; i < constant.generic_argument_count; ++i) {
     for(auto j = 0; j < constant.generic_arguments[i].union_size; ++j) {
       size += size_of_constant(constant.generic_arguments[i].union_types[j]);

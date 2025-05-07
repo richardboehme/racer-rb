@@ -171,6 +171,7 @@ class Racer::Agent
   def shift_constant(data)
     name = data.shift
     type = data.shift
+    singleton = data.shift
     constant_path_size = data.shift
 
     fragment_name = nil
@@ -195,6 +196,7 @@ class Racer::Agent
     Racer::Trace::Constant.new(
       name:,
       type: Racer::Trace::Constant::TYPES.fetch(type),
+      singleton:,
       path:,
       generic_arguments:
     )

@@ -328,7 +328,7 @@ module Racer::Collectors
 
         if bool_union.all?
           constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
-          constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: []))
+          constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: [], singleton: false))
         end
       end
 
@@ -349,23 +349,32 @@ module Racer::Collectors
         RBS::Types::Literal.new(literal: false, location: nil)
       else
         type_name = to_type_name(constant.name)
-        existing_type = @environment.class_decls[type_name]
-        type_params = existing_type&.type_params || []
 
-        args =
-          if constant.generic_arguments.size == type_params.size
-            constant.generic_arguments.map do |union_types|
-              to_rbs_type(*union_types)
+        if constant.singleton
+          RBS::Types::ClassSingleton.new(
+            name: type_name,
+            location: nil
+          )
+        else
+          existing_type = @environment.class_decls[type_name]
+          type_params = existing_type&.type_params || []
+
+          args =
+            if constant.generic_arguments.size == type_params.size
+              constant.generic_arguments.map do |union_types|
+                to_rbs_type(*union_types)
+              end
+            else
+              type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
             end
-          else
-            type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
-          end
 
-        RBS::Types::ClassInstance.new(
-          name: type_name,
-          args:,
-          location: nil
-        )
+
+          RBS::Types::ClassInstance.new(
+            name: type_name,
+            args:,
+            location: nil
+          )
+        end
       end
     end
 

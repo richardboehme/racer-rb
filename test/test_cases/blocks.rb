@@ -4,6 +4,12 @@ def bar(&block)
   end
 end
 
+class Foo
+  def self.foo(&block)
+    instance_eval(&block)
+  end
+end
+
 def foo(&block)
   other_block = -> {}
   other_block.call()
@@ -28,6 +34,10 @@ foo do |a, b = 1, kw:, kw2: nil, &block|
   end
 end
 
+# self type should be a singleton of Foo
+Foo.foo do
+end
+
 # We cannot collect traces for blocks that have no name, because we cannot
 # match them to the correct method call.
 baz do
@@ -41,6 +51,7 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -49,6 +60,7 @@ __END__
   method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: Integer
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -59,6 +71,7 @@ __END__
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::Constant
         name: Integer
+        singleton: false
         type: :class
         path: []
         generic_arguments: []
@@ -67,6 +80,7 @@ __END__
         name: :a
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -75,6 +89,7 @@ __END__
         name: :b
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -83,6 +98,7 @@ __END__
         name: :kw
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -91,6 +107,7 @@ __END__
         name: :kw2
         type_name: !ruby/object:Racer::Trace::Constant
           name: NilClass
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -101,6 +118,7 @@ __END__
         - !ruby/object:Racer::Trace::BlockTrace
           return_type: !ruby/object:Racer::Trace::Constant
             name: Integer
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
@@ -111,6 +129,7 @@ __END__
             - !ruby/object:Racer::Trace::BlockTrace
               return_type: !ruby/object:Racer::Trace::Constant
                 name: Integer
+                singleton: false
                 type: :class
                 path: []
                 generic_arguments: []
@@ -118,22 +137,26 @@ __END__
               block_param:
               self_type: !ruby/object:Racer::Trace::Constant
                 name: Integer
+                singleton: false
                 type: :class
                 path: []
                 generic_arguments: []
           self_type: !ruby/object:Racer::Trace::Constant
             name: Object
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
       self_type: !ruby/object:Racer::Trace::Constant
         name: Object
+        singleton: false
         type: :class
         path: []
         generic_arguments: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -142,6 +165,7 @@ __END__
   method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: Integer
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -152,21 +176,25 @@ __END__
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::Constant
         name: Array
+        singleton: false
         type: :class
         path: []
         generic_arguments:
         - - !ruby/object:Racer::Trace::Constant
             name: Integer
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
           - !ruby/object:Racer::Trace::Constant
             name: String
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
           - !ruby/object:Racer::Trace::Constant
             name: Symbol
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
@@ -175,6 +203,7 @@ __END__
         name: :a
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -183,6 +212,7 @@ __END__
         name: :b
         type_name: !ruby/object:Racer::Trace::Constant
           name: String
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -191,6 +221,7 @@ __END__
         name: :kw
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -199,6 +230,7 @@ __END__
         name: :kw2
         type_name: !ruby/object:Racer::Trace::Constant
           name: Symbol
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -208,32 +240,38 @@ __END__
         traces: []
       self_type: !ruby/object:Racer::Trace::Constant
         name: Object
+        singleton: false
         type: :class
         path: []
         generic_arguments: []
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::Constant
         name: Array
+        singleton: false
         type: :class
         path: []
         generic_arguments:
         - - !ruby/object:Racer::Trace::Constant
             name: String
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
           - !ruby/object:Racer::Trace::Constant
             name: Regexp
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
           - !ruby/object:Racer::Trace::Constant
             name: Float
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
           - !ruby/object:Racer::Trace::Constant
             name: NilClass
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
@@ -242,6 +280,7 @@ __END__
         name: :a
         type_name: !ruby/object:Racer::Trace::Constant
           name: String
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -250,6 +289,7 @@ __END__
         name: :b
         type_name: !ruby/object:Racer::Trace::Constant
           name: Regexp
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -258,6 +298,7 @@ __END__
         name: :kw
         type_name: !ruby/object:Racer::Trace::Constant
           name: Float
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -266,6 +307,7 @@ __END__
         name: :kw2
         type_name: !ruby/object:Racer::Trace::Constant
           name: NilClass
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -275,12 +317,14 @@ __END__
         traces: []
       self_type: !ruby/object:Racer::Trace::Constant
         name: Object
+        singleton: false
         type: :class
         path: []
         generic_arguments: []
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::Constant
         name: Integer
+        singleton: false
         type: :class
         path: []
         generic_arguments: []
@@ -289,6 +333,7 @@ __END__
         name: :a
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -297,6 +342,7 @@ __END__
         name: :b
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -305,6 +351,7 @@ __END__
         name: :kw
         type_name: !ruby/object:Racer::Trace::Constant
           name: Integer
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -313,6 +360,7 @@ __END__
         name: :kw2
         type_name: !ruby/object:Racer::Trace::Constant
           name: NilClass
+          singleton: false
           type: :class
           path: []
           generic_arguments: []
@@ -323,6 +371,7 @@ __END__
         - !ruby/object:Racer::Trace::BlockTrace
           return_type: !ruby/object:Racer::Trace::Constant
             name: Integer
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
@@ -333,6 +382,7 @@ __END__
             - !ruby/object:Racer::Trace::BlockTrace
               return_type: !ruby/object:Racer::Trace::Constant
                 name: Integer
+                singleton: false
                 type: :class
                 path: []
                 generic_arguments: []
@@ -340,22 +390,61 @@ __END__
               block_param:
               self_type: !ruby/object:Racer::Trace::Constant
                 name: Integer
+                singleton: false
                 type: :class
                 path: []
                 generic_arguments: []
           self_type: !ruby/object:Racer::Trace::Constant
             name: Object
+            singleton: false
             type: :class
             path: []
             generic_arguments: []
       self_type: !ruby/object:Racer::Trace::Constant
         name: Object
+        singleton: false
+        type: :class
+        path: []
+        generic_arguments: []
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: Foo
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: foo
+  method_kind: :singleton
+  method_visibility: :public
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  params: []
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name: block
+    traces:
+    - !ruby/object:Racer::Trace::BlockTrace
+      return_type: !ruby/object:Racer::Trace::Constant
+        name: NilClass
+        singleton: false
+        type: :class
+        path: []
+        generic_arguments: []
+      params: []
+      block_param:
+      self_type: !ruby/object:Racer::Trace::Constant
+        name: Foo
+        singleton: true
         type: :class
         path: []
         generic_arguments: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant
     name: Object
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
@@ -364,6 +453,7 @@ __END__
   method_visibility: :private
   return_type: !ruby/object:Racer::Trace::Constant
     name: Integer
+    singleton: false
     type: :class
     path: []
     generic_arguments: []
