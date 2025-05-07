@@ -68,7 +68,8 @@ class Racer::Agent
           if messages.empty?
             last_message = "#{pending_message}#{last_message}"
           else
-            messages[0] = "#{pending_message}#{messages[0]}"
+            first_message = messages.shift
+            messages.prepend(*("#{pending_message}#{first_message}".split("\0")))
           end
 
           pending_message = nil
