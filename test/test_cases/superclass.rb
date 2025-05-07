@@ -6,6 +6,9 @@ class A
   def instance_method(a)
     a
   end
+
+  def private_method
+  end
 end
 
 class B < A
@@ -18,6 +21,10 @@ class B < A
     super(c)
     [c, d]
   end
+
+  private def private_method
+    super
+  end
 end
 
 class C < A
@@ -27,6 +34,7 @@ Racer.start
 
 B.singleton_method(1, 2)
 B.new.instance_method(1, 2)
+B.new.send(:private_method)
 
 C.singleton_method(1)
 C.new.instance_method(1)
@@ -172,6 +180,42 @@ __END__
       path: []
       generic_arguments: []
     type: :required
+  block_param:
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: A
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: private_method
+  method_kind: :instance
+  method_visibility: :public
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  params: []
+  block_param:
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::Constant
+    name: B
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  method_name: private_method
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    singleton: false
+    type: :class
+    path: []
+    generic_arguments: []
+  params: []
   block_param:
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::Constant

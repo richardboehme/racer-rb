@@ -430,8 +430,13 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
     // Only change the method owner, if self does not implement the method themselves.
     if(rb_funcall(owner, method_defined, 2, method_id, Qfalse) == Qfalse)  {
-      defined_class = self;
+      // method_defined? documentation: "Public and protected methods are matched"
+      // so we need to check for private methods seperately
+      if(rb_funcall(owner, private_method_defined, 2, method_id, Qfalse) == Qfalse)  {
+        defined_class = self;
+      }
     }
+
   }
 
   trace->method_owner = class_to_constant(defined_class);
