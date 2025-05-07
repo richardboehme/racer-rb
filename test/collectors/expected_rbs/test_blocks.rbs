@@ -1,5 +1,23 @@
 class ::RBSCollectorTest
-  def foo: () { (::String | ::Symbol a, ?::Integer b) [self: ::String | ::Integer] -> (nil | ::String) } -> nil
+  def foo: () { (::String | ::RBSCollectorTest::A::B::C::E a, ?::Integer b) [self: ::String | ::Integer] -> (::RBSCollectorTest::A::B::C::D | ::String) } -> nil
 
-  def bar: () { () [self: singleton(::RBSCollectorTest)] -> nil } -> nil
+  def bar: () { () [self: singleton(::RBSCollectorTest::A::B::C::F)] -> nil } -> nil
+end
+
+class ::RBSCollectorTest::A::B::C::D
+end
+
+module ::RBSCollectorTest::A::B::C
+end
+
+class ::RBSCollectorTest::A::B
+end
+
+module ::RBSCollectorTest::A
+end
+
+module ::RBSCollectorTest::A::B::C::E
+end
+
+class ::RBSCollectorTest::A::B::C::F
 end

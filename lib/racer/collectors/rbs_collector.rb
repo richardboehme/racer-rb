@@ -35,6 +35,16 @@ module Racer::Collectors
         push_constant_to_results(param.type_name)
       end
 
+      if trace.block_param
+        trace.block_param.traces.each do |block_trace|
+          push_constant_to_results(block_trace.return_type)
+          push_constant_to_results(block_trace.self_type)
+          block_trace.params.each do |param|
+            push_constant_to_results(param.type_name)
+          end
+        end
+      end
+
       @results[trace.method_owner.name][method_type_key][trace.method_name] << trace
     end
 

@@ -13,6 +13,8 @@ class RBSCollectorTest < Minitest::Test
         end
         module E
         end
+        class F
+        end
       end
     end
   end
@@ -223,12 +225,12 @@ class RBSCollectorTest < Minitest::Test
                 { name: :a, klass: String, type: :required },
                 { name: :b, klass: Integer, type: :optional }
               ],
-              return_type: NilClass,
+              return_type: A::B::C::D,
               self_type: String
             },
             {
               params: [
-                { name: :a, klass: Symbol, type: :required },
+                { name: :a, klass: A::B::C::E, type: :required },
                 { name: :b, klass: Integer, type: :optional }
               ],
               return_type: String,
@@ -243,7 +245,7 @@ class RBSCollectorTest < Minitest::Test
       ),
       trace(
         name: :bar,
-        block_param: to_block_param(traces: [{ self_type: to_constant(RBSCollectorTest, singleton: true) }])
+        block_param: to_block_param(traces: [{ self_type: to_constant(A::B::C::F, singleton: true) }])
       )
     ].each { collector.collect(it) }
 

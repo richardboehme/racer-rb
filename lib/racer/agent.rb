@@ -60,7 +60,7 @@ class Racer::Agent
         # TODO: Is this an error? I would expect it waits until there is something to read?
         next if received_message.nil?
 
-        File.write("messages", "#{received_message}\n\n", mode: "a+")
+        # File.write("messages", "#{received_message}\n\n", mode: "a+")
 
         *messages, last_message = received_message.split("\0")
 
