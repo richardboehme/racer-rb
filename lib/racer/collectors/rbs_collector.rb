@@ -331,20 +331,16 @@ module Racer::Collectors
     def to_rbs_type(*constants)
       constants.uniq!
 
-      if constants.size > 1
-        bool_union = [false, false]
-        constants.each do |constant|
-          if constant.name == "TrueClass"
-            bool_union[0] = true
-          elsif constant.name == "FalseClass"
-            bool_union[1] = true
-          end
+      has_boolean = false
+      constants.each do |constant|
+        if constant.name == "TrueClass" || constant.name == "FalseClass"
+          has_boolean = true
         end
+      end
 
-        if bool_union.all?
-          constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
-          constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: [], singleton: false))
-        end
+      if has_boolean
+        constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
+        constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: [], singleton: false))
       end
 
       if constants.size > 1
@@ -358,10 +354,6 @@ module Racer::Collectors
         RBS::Types::Bases::Bool.new(location: nil)
       when "NilClass"
         RBS::Types::Bases::Nil.new(location: nil)
-      when "TrueClass"
-        RBS::Types::Literal.new(literal: true, location: nil)
-      when "FalseClass"
-        RBS::Types::Literal.new(literal: false, location: nil)
       else
         type_name = to_type_name(constant.name)
 

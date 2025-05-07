@@ -1,7 +1,7 @@
 class ::RBSCollectorTest
-  def foo: (false a, true b, nil c) -> true
+  def foo: (bool a, bool b, nil c) -> bool
 
-  def bar: () -> false
+  def bar: () -> bool
 
   def baz: () -> nil
 
