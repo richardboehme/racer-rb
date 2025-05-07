@@ -13,6 +13,6 @@ end
 class ::Hash[unchecked out K, unchecked out V]
   def foo: () -> nil
 
-  private def initialize: () -> nil
+  private def initialize: () -> void
                         | ...
 end

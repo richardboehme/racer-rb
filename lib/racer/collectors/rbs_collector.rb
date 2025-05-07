@@ -180,6 +180,11 @@ module Racer::Collectors
           methods.key?(name.to_sym)
         end
 
+      return_type =
+        if name == "initialize"
+          RBS::Types::Bases::Void.new(location: nil)
+        end
+
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
@@ -191,7 +196,7 @@ module Racer::Collectors
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(params),
-                return_type: to_rbs_type(*traces.map(&:return_type))
+                return_type: return_type || to_rbs_type(*traces.map(&:return_type))
               ),
               block: block_params.empty? ? nil : to_block(block_params),
               location: nil
