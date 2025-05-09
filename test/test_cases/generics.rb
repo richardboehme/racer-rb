@@ -25,575 +25,550 @@ Racer.stop
 __END__
 ---
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Array
     singleton: false
-    type: :class
-    path: []
     generic_arguments:
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Integer
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: String
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Array
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Regexp
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: A::B
         singleton: false
-        type: :class
-        path:
-        - !ruby/object:Racer::Trace::Constant::PathFragment
-          name: :A
-          type: :module
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Array
       singleton: false
-      type: :class
-      path: []
       generic_arguments:
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Integer
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: String
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Array
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Regexp
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: A::B
           singleton: false
-          type: :class
-          path:
-          - !ruby/object:Racer::Trace::Constant::PathFragment
-            name: :A
-            type: :module
           generic_arguments: []
     type: :required
   block_param:
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Object
+    anonymous: true
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::Integer
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Comparable
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Numeric
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - Comparable
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Integer
+    anonymous: false
+    type: :class
+    superclass: Numeric
+    included_modules:
+    - JSON::Ext::Generator::GeneratorMethods::Integer
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::String
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::String::Extend
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: String
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - JSON::Ext::Generator::GeneratorMethods::String
+    - Comparable
+    prepended_modules: []
+    extended_modules:
+    - JSON::Ext::Generator::GeneratorMethods::String::Extend
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::Array
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Enumerable
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Array
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - JSON::Ext::Generator::GeneratorMethods::Array
+    - Enumerable
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Regexp
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: A
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: A::B
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Hash
     singleton: false
-    type: :class
-    path: []
     generic_arguments:
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Symbol
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: String
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: A::B
         singleton: false
-        type: :class
-        path:
-        - !ruby/object:Racer::Trace::Constant::PathFragment
-          name: :A
-          type: :module
         generic_arguments: []
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Integer
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: String
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Regexp
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Hash
       singleton: false
-      type: :class
-      path: []
       generic_arguments:
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Symbol
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: String
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: A::B
           singleton: false
-          type: :class
-          path:
-          - !ruby/object:Racer::Trace::Constant::PathFragment
-            name: :A
-            type: :module
           generic_arguments: []
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Integer
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: String
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Regexp
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
     type: :required
   block_param:
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Symbol
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - Comparable
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::Hash
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Hash
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - JSON::Ext::Generator::GeneratorMethods::Hash
+    - Enumerable
+    prepended_modules: []
+    extended_modules: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Hash
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Hash
       singleton: false
-      type: :class
-      path: []
       generic_arguments: []
     type: :required
   block_param:
+  constant_updates: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Array
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Array
       singleton: false
-      type: :class
-      path: []
       generic_arguments: []
     type: :required
   block_param:
+  constant_updates: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Array
     singleton: false
-    type: :class
-    path: []
     generic_arguments:
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Array
         singleton: false
-        type: :class
-        path: []
         generic_arguments:
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Integer
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-          - !ruby/object:Racer::Trace::Constant
+          - !ruby/object:Racer::Trace::ConstantInstance
             name: String
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-          - !ruby/object:Racer::Trace::Constant
+          - !ruby/object:Racer::Trace::ConstantInstance
             name: Array
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-          - !ruby/object:Racer::Trace::Constant
+          - !ruby/object:Racer::Trace::ConstantInstance
             name: Hash
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Array
       singleton: false
-      type: :class
-      path: []
       generic_arguments:
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Array
           singleton: false
-          type: :class
-          path: []
           generic_arguments:
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Integer
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-            - !ruby/object:Racer::Trace::Constant
+            - !ruby/object:Racer::Trace::ConstantInstance
               name: String
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-            - !ruby/object:Racer::Trace::Constant
+            - !ruby/object:Racer::Trace::ConstantInstance
               name: Array
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-            - !ruby/object:Racer::Trace::Constant
+            - !ruby/object:Racer::Trace::ConstantInstance
               name: Hash
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
     type: :required
   block_param:
+  constant_updates: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Hash
     singleton: false
-    type: :class
-    path: []
     generic_arguments:
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Symbol
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Array
         singleton: false
-        type: :class
-        path: []
         generic_arguments:
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Integer
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-          - !ruby/object:Racer::Trace::Constant
+          - !ruby/object:Racer::Trace::ConstantInstance
             name: Array
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Array
         singleton: false
-        type: :class
-        path: []
         generic_arguments:
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Integer
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Hash
         singleton: false
-        type: :class
-        path: []
         generic_arguments:
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Symbol
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Integer
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-          - !ruby/object:Racer::Trace::Constant
+          - !ruby/object:Racer::Trace::ConstantInstance
             name: Array
             singleton: false
-            type: :class
-            path: []
             generic_arguments: []
-      - !ruby/object:Racer::Trace::Constant
+      - !ruby/object:Racer::Trace::ConstantInstance
         name: Symbol
         singleton: false
-        type: :class
-        path: []
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Hash
       singleton: false
-      type: :class
-      path: []
       generic_arguments:
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Symbol
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Array
           singleton: false
-          type: :class
-          path: []
           generic_arguments:
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Integer
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-            - !ruby/object:Racer::Trace::Constant
+            - !ruby/object:Racer::Trace::ConstantInstance
               name: Array
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Array
           singleton: false
-          type: :class
-          path: []
           generic_arguments:
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Integer
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Hash
           singleton: false
-          type: :class
-          path: []
           generic_arguments:
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Symbol
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Integer
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-            - !ruby/object:Racer::Trace::Constant
+            - !ruby/object:Racer::Trace::ConstantInstance
               name: Array
               singleton: false
-              type: :class
-              path: []
               generic_arguments: []
-        - !ruby/object:Racer::Trace::Constant
+        - !ruby/object:Racer::Trace::ConstantInstance
           name: Symbol
           singleton: false
-          type: :class
-          path: []
           generic_arguments: []
     type: :required
   block_param:
+  constant_updates: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Object
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :private
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: Array
     singleton: false
-    type: :class
-    path: []
     generic_arguments:
-    - - !ruby/object:Racer::Trace::Constant
+    - - !ruby/object:Racer::Trace::ConstantInstance
         name: Array
         singleton: false
-        type: :class
-        path: []
         generic_arguments:
-        - - !ruby/object:Racer::Trace::Constant
+        - - !ruby/object:Racer::Trace::ConstantInstance
             name: Array
             singleton: false
-            type: :class
-            path: []
             generic_arguments:
-            - - !ruby/object:Racer::Trace::Constant
+            - - !ruby/object:Racer::Trace::ConstantInstance
                 name: Integer
                 singleton: false
-                type: :class
-                path: []
                 generic_arguments: []
-              - !ruby/object:Racer::Trace::Constant
+              - !ruby/object:Racer::Trace::ConstantInstance
                 name: Array
                 singleton: false
-                type: :class
-                path: []
                 generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: Array
       singleton: false
-      type: :class
-      path: []
       generic_arguments:
-      - - !ruby/object:Racer::Trace::Constant
+      - - !ruby/object:Racer::Trace::ConstantInstance
           name: Array
           singleton: false
-          type: :class
-          path: []
           generic_arguments:
-          - - !ruby/object:Racer::Trace::Constant
+          - - !ruby/object:Racer::Trace::ConstantInstance
               name: Array
               singleton: false
-              type: :class
-              path: []
               generic_arguments:
-              - - !ruby/object:Racer::Trace::Constant
+              - - !ruby/object:Racer::Trace::ConstantInstance
                   name: Integer
                   singleton: false
-                  type: :class
-                  path: []
                   generic_arguments: []
-                - !ruby/object:Racer::Trace::Constant
+                - !ruby/object:Racer::Trace::ConstantInstance
                   name: Array
                   singleton: false
-                  type: :class
-                  path: []
                   generic_arguments: []
     type: :required
   block_param:
+  constant_updates: []

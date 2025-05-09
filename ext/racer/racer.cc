@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
 #define DEBUG 0
 #define debug_warn(fmt, ...) \
@@ -23,29 +24,13 @@ static ID reqParam, optParam, restParam, keyreqParam, keyParam, keyrestParam, no
   method_defined, public_method_defined, private_method_defined,
   callerLocationsId, pathId = -1;
 
-static std::unordered_map<long, std::vector<ReturnTrace*>> call_stacks;
+static std::unordered_map<unsigned long, std::vector<ReturnTrace*>> call_stacks;
 
-static VALUE
-class_to_name(VALUE klass) {
-  auto class_name = rb_class_path_cached(rb_class_real(klass));
-  if(RB_NIL_P(class_name)) {
-    if(RB_TYPE_P(klass, T_CLASS)) {
-      do {
-        klass = rb_class_superclass(klass);
-        if(!RB_TEST(klass)) {
-          break;
-        }
-
-        class_name = rb_class_path_cached(klass);
-      } while(RB_NIL_P(class_name));
-    } else {
-      // Module
-      return rb_str_new_cstr("Module");
-    }
-  }
-
-  return class_name;
-}
+// TODO: Think about if this can break with GCs. Currently we are not marking those objects so the GC
+// cannot know if we hold a reference to them. Also with GC compaction the object behind a pointer
+// could move (as far as I understand, CRuby prevents this for C-Extensions).
+static std::unordered_map<VALUE, std::shared_ptr<Constant>> constant_map = {};
+static std::vector<VALUE> constant_updates {};
 
 static ClassType
 class_type_by_constant(VALUE constant) {
@@ -62,48 +47,158 @@ class_type_by_constant(VALUE constant) {
   }
 }
 
-static Constant
-class_to_constant(VALUE klass, unsigned char generic_argument_size = 0, GenericArgument* generic_arguments = nullptr) {
-  auto class_name = class_to_name(klass);
-  auto current_space = rb_cObject;
-  auto class_name_str = strdup(StringValueCStr(class_name));
-  char* occurence = class_name_str;
-  long constant_path_size = 0;
-  do {
-    occurence = strstr(occurence, "::");
 
-    char* fragment;
-    if(!occurence) break;
+static std::shared_ptr<Constant>
+explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constants = nullptr) {
+  // TODO: Should we check if we are already in the map here?
+  auto constant_type = class_type_by_constant(ruby_constant);
 
-    occurence[0] = '\0';
-    constant_path_size++;
-    occurence += 2;
-  } while(occurence != nullptr);
+  VALUE ruby_constant_name = rb_mod_name(ruby_constant);
+  bool anonymous = false;
+  if(RB_NIL_P(ruby_constant_name)) {
+    anonymous = true;
+    VALUE klass = ruby_constant;
+    if(RB_TYPE_P(klass, T_CLASS)) {
+      do {
+        klass = rb_class_superclass(klass);
+        if(!RB_TEST(klass)) {
+          break;
+        }
 
-  auto paths = new Path[constant_path_size];
+        ruby_constant_name = rb_class_path_cached(klass);
+      } while(RB_NIL_P(ruby_constant_name));
+    } else {
+      // Module
+      ruby_constant_name = rb_str_new_cstr("Module");
+    }
+  }
+  auto constant_name = strdup(StringValueCStr(ruby_constant_name));
 
-  for(auto i = 0; i < constant_path_size; ++i) {
-    auto fragment = strdup(class_name_str);
+  Constant constant_obj = { constant_name, anonymous, constant_type };
+  std::shared_ptr<Constant> constant = std::make_shared<Constant>(constant_obj);
+  auto ancestors = rb_mod_ancestors(ruby_constant);
 
-    current_space = rb_const_get_at(current_space, rb_intern(fragment));
-    paths[i] = { fragment, class_type_by_constant(current_space) };
+  auto ancestors_pointer = RARRAY_CONST_PTR(ancestors);
+  bool prepended = false;
+  std::unordered_set<VALUE> inner_constants = {};
+  for(auto i = 0; i < rb_array_len(ancestors); ++i) {
+    auto ancestor = ancestors_pointer[i];
 
-    class_name_str += strlen(fragment) + 2;
+    if(ancestor == ruby_constant) {
+      // barrier from prepended to included/superclass
+      prepended = false;
+      continue;
+    }
+
+    if(constant_type == CLASS && rb_type_p(ancestor, T_CLASS)) {
+      if(prepended) {
+        auto ancestor_inspect = rb_inspect(ancestor);
+        rb_warn("Class %s in ancestors of %s before self (prepended class?)", StringValueCStr(ancestor_inspect), constant_name);
+        continue;
+      }
+
+      // Object is the superclass of all classes (except BasicObject)
+      if(ancestor == rb_cObject) {
+        break;
+      }
+
+      auto ancestor_constant = explore_constant(ancestor);
+      constant->superclass = ancestor_constant->name;
+      // After the superclass there will be other superclasses or modules included in the super classes
+      // which are not directly included into constant. This means when reaching the superclass we reached
+      // the end of constant's direct ancestor chain
+      break;
+    }
+
+    // Constant is a module
+    if(inner_constants.find(ancestor) == inner_constants.end()) {
+      auto ancestor_constant = explore_constant(ancestor, &inner_constants);
+      if(visited_constants) visited_constants->emplace(ancestor);
+
+      if(prepended) {
+        constant->prepended_modules.push_back(ancestor_constant->name);
+      } else {
+        constant->included_modules.push_back(ancestor_constant->name);
+      }
+    }
   }
 
-  return { strdup(StringValueCStr(class_name)), class_type_by_constant(klass), constant_path_size, paths, generic_argument_size, generic_arguments };
+  auto singleton_class = rb_singleton_class(ruby_constant);
+  auto singleton_class_ancestors = rb_mod_ancestors(singleton_class);
+  auto singleton_class_ancestors_pointer = RARRAY_CONST_PTR(singleton_class_ancestors);
+
+  auto object_singleton_class = rb_singleton_class(rb_cObject);
+
+  // Note: In pricinple it's possible to prepend a module to a singleton class. Let's see
+  // if we need that in the future. As far as I know it's not possible to type this with RBS anyway.
+  for(auto i = 0; i < rb_array_len(singleton_class_ancestors); ++i) {
+    auto ancestor = singleton_class_ancestors_pointer[i];
+
+    if(ancestor == singleton_class) {
+      continue;
+    }
+
+    if(ancestor == object_singleton_class || ancestor == rb_cModule) {
+      break;
+    }
+
+    if(RB_TYPE_P(ancestor, T_MODULE)) {
+      // Constant is a module
+      if(inner_constants.find(ancestor) == inner_constants.end()) {
+        auto ancestor_constant = explore_constant(ancestor, &inner_constants);
+        if(visited_constants) visited_constants->emplace(ancestor);
+
+        constant->extended_modules.push_back(ancestor_constant->name);
+      }
+    }
+  }
+
+  if(visited_constants) {
+    for(auto elem : inner_constants) {
+      visited_constants->emplace(elem);
+    }
+  }
+
+  auto result = constant_map.emplace(ruby_constant, constant);
+
+  if(result.second) {
+    constant_updates.push_back(ruby_constant);
+  }
+
+  return constant;
 }
 
-static GenericArgument
-generic_argument_from_union_types(std::vector<Constant>& types) {
-  auto union_size = types.size();
-  Constant* union_types = new Constant[union_size];
+static ConstantInstance
+class_to_constant_instance(VALUE klass, unsigned char generic_argument_count = 0, std::vector<ConstantInstance>* generic_arguments = nullptr) {
+  auto existing_constant = constant_map.find(klass);
+  std::shared_ptr<Constant> constant;
+  if(existing_constant == constant_map.end()) {
+    auto class_name = rb_mod_name(klass);
+    if(!RB_NIL_P(class_name)) {
+      auto current_space = rb_cObject;
+      auto class_name_str = strdup(StringValueCStr(class_name));
+      long constant_path_size = 0;
+      char* occurence = nullptr;
+      do {
+        occurence = strstr(class_name_str, "::");
 
-  for(size_t i = 0; i < union_size; ++i) {
-    union_types[i] = types.at(i);
+        if(!occurence) break;
+
+        occurence[0] = '\0';
+        current_space = rb_const_get_at(current_space, rb_intern(class_name_str));
+        explore_constant(current_space);
+
+        class_name_str = occurence + 2;
+      } while(occurence != nullptr);
+    }
+
+    constant = explore_constant(klass);
+  } else {
+    constant = (*existing_constant).second;
   }
 
-  return { union_size, union_types };
+
+  return { constant->name, generic_argument_count, generic_arguments };
 }
 
 static int
@@ -113,7 +208,7 @@ hash_to_keys_and_values(VALUE key, VALUE value, VALUE ary) {
   return ST_CONTINUE;
 }
 
-std::pair<unsigned char, GenericArgument*>
+std::pair<unsigned char, std::vector<ConstantInstance>*>
 generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
   if(depth == maxGenericDepth) return { 0, nullptr };
 
@@ -122,7 +217,7 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
     if(length > 0) {
       // We need to use a set and a vector to preserve order of the union types
       std::unordered_set<VALUE> types = {};
-      std::vector<Constant> types_vec = {};
+      std::vector<ConstantInstance> types_vec = {};
       auto ary_ptr = RARRAY_CONST_PTR(value);
       // This is O(n) and thus could be pretty slow
       for(auto j = 0; j < rb_array_len(value); ++j) {
@@ -133,15 +228,15 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
         if(generic_arguments.first == 0) {
           auto result = types.insert(klass);
           if(result.second) {
-            types_vec.push_back(class_to_constant(klass));
+            types_vec.push_back(class_to_constant_instance(klass));
           }
         } else {
-          types_vec.push_back(class_to_constant(klass, generic_arguments.first, generic_arguments.second));
+          types_vec.push_back(class_to_constant_instance(klass, generic_arguments.first, generic_arguments.second));
         }
       }
 
-      auto generic_arguments = new GenericArgument[1];
-      generic_arguments[0] = generic_argument_from_union_types(types_vec);
+      auto generic_arguments = new std::vector<ConstantInstance>[1];
+      generic_arguments[0] = types_vec;
       return { 1, generic_arguments };
     }
   } else
@@ -152,9 +247,9 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
     if(hash_size > 0) {
 
       std::unordered_set<VALUE> key_types = {};
-      std::vector<Constant> key_vec = {};
+      std::vector<ConstantInstance> key_vec = {};
       std::unordered_set<VALUE> value_types = {};
-      std::vector<Constant> value_vec = {};
+      std::vector<ConstantInstance> value_vec = {};
 
       VALUE keys_and_values = rb_ary_new_capa(hash_size * 2);
       rb_hash_foreach(value, hash_to_keys_and_values, keys_and_values);
@@ -168,10 +263,10 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
         if(key_generics.first == 0) {
           auto key_result = key_types.insert(key_type);
           if(key_result.second) {
-            key_vec.push_back(class_to_constant(key_type));
+            key_vec.push_back(class_to_constant_instance(key_type));
           }
         } else {
-          key_vec.push_back(class_to_constant(key_type, key_generics.first, key_generics.second));
+          key_vec.push_back(class_to_constant_instance(key_type, key_generics.first, key_generics.second));
         }
 
 
@@ -181,16 +276,16 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
         if(value_generics.first == 0) {
           auto value_result = value_types.insert(value_type);
           if(value_result.second) {
-            value_vec.push_back(class_to_constant(value_type));
+            value_vec.push_back(class_to_constant_instance(value_type));
           }
         } else {
-          value_vec.push_back(class_to_constant(value_type, value_generics.first, value_generics.second));
+          value_vec.push_back(class_to_constant_instance(value_type, value_generics.first, value_generics.second));
         }
       }
 
-      auto generic_arguments = new GenericArgument[2];
-      generic_arguments[0] = generic_argument_from_union_types(key_vec);
-      generic_arguments[1] = generic_argument_from_union_types(value_vec);
+      auto generic_arguments = new std::vector<ConstantInstance>[2];
+      generic_arguments[0] = key_vec;
+      generic_arguments[1] = value_vec;
 
       return { 2, generic_arguments };
     }
@@ -324,7 +419,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
       }
 
       unsigned char generic_argument_size = 0;
-      GenericArgument* generic_arguments = nullptr;
+      std::vector<ConstantInstance>* generic_arguments = nullptr;
 
       if(param_name_id == anonRest) {
         param_class = rb_cArray;
@@ -363,7 +458,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
         continue;
       }
 
-      trace->params[trace->params_size] = { param_name, class_to_constant(param_class, generic_argument_size, generic_arguments), type };
+      trace->params[trace->params_size] = { param_name, class_to_constant_instance(param_class, generic_argument_size, generic_arguments), type };
       trace->params_size++;
     } else {
       if(param_type == nokeyParam) {
@@ -372,7 +467,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
       }
 
       if(param_type == reqParam) {
-        trace->params[trace->params_size] = { nullptr, class_to_constant(rb_cArray), REQUIRED };
+        trace->params[trace->params_size] = { nullptr, class_to_constant_instance(rb_cArray), REQUIRED };
         trace->params_size++;
         continue;
       }
@@ -439,7 +534,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
 
   }
 
-  trace->method_owner = class_to_constant(defined_class);
+  trace->method_owner = class_to_constant_instance(defined_class);
 
   long fiber_id = rb_fiber_current();
   auto stack_pair = call_stacks.find(fiber_id);
@@ -527,7 +622,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   auto return_value = rb_tracearg_return_value(trace_arg);
   auto return_value_class = rb_class_of(return_value);
   auto generics = generic_arguments_by_value(return_value, return_value_class);
-  trace->return_type = class_to_constant(return_value_class, generics.first, generics.second);
+  trace->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
 
   if(trace->block_param.has_value()) {
     VALUE tracepoint_id = trace->block_param.value().tracepoint_id;
@@ -535,6 +630,11 @@ process_return_event(rb_trace_arg_t* trace_arg) {
       rb_tracepoint_disable(tracepoint_id);
     }
   }
+
+  for(auto constant : constant_updates) {
+    trace->constant_updates.push_back(constant_map.at(constant));
+  }
+  constant_updates.clear();
 
   tiny_queue_message_t *message = (tiny_queue_message_t *)malloc(sizeof(tiny_queue_message_t));
   message->queue_state = 1;
@@ -594,13 +694,13 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
     auto self = rb_tracearg_self(trace_arg);
     auto self_type = rb_type(self);
     if(self_type == T_CLASS || self_type == T_MODULE) {
-      auto constant = class_to_constant(self);
-      constant.singleton = true;
-      trace->block_self_type = constant;
+      auto constant_instance = class_to_constant_instance(self);
+      constant_instance.singleton = true;
+      trace->block_self_type = constant_instance;
     } else {
       auto self_class = rb_class_of(self);
       auto generics = generic_arguments_by_value(self, self_class);
-      trace->block_self_type = class_to_constant(self_class, generics.first, generics.second);
+      trace->block_self_type = class_to_constant_instance(self_class, generics.first, generics.second);
     }
   }
 
@@ -637,7 +737,7 @@ process_block_return_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   auto return_value = rb_tracearg_return_value(trace_arg);
   auto return_value_class = rb_class_of(return_value);
   auto generics = generic_arguments_by_value(return_value, return_value_class);
-  last_block_call->return_type = class_to_constant(return_value_class, generics.first, generics.second);
+  last_block_call->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
   block_param.block_traces.push_back(last_block_call);
 }
 

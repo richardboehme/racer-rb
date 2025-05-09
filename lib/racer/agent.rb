@@ -90,7 +90,7 @@ class Racer::Agent
           end
 
           data = JSON.parse(data)
-          # File.write("messages", "#{data}\n\n", mode: "a+")
+          File.write("messages", "#{data}\n\n", mode: "a+")
 
           method_name = data.shift
           method_kind =
@@ -105,10 +105,13 @@ class Racer::Agent
               Racer::Trace::VISIBILITIES.first
             end
 
-          return_type = shift_constant(data)
-          method_owner = shift_constant(data)
+          return_type = shift_constant_instance(data)
+          method_owner = shift_constant_instance(data)
+
+          constant_updates = shift_constant_updates(data)
 
           params, block_param = shift_params(data)
+
 
           unless data.empty?
             warn "Received more data then expected: #{data}"
@@ -123,6 +126,7 @@ class Racer::Agent
               return_type:,
               params:,
               block_param:,
+              constant_updates:
             )
           )
         end
@@ -131,8 +135,8 @@ class Racer::Agent
   end
 
   def shift_block_trace(data)
-    self_type = shift_constant(data)
-    return_type = shift_constant(data)
+    self_type = shift_constant_instance(data)
+    return_type = shift_constant_instance(data)
     params, block_param = shift_params(data)
 
     Racer::Trace::BlockTrace.new(self_type:, return_type:, params:, block_param:)
@@ -164,41 +168,62 @@ class Racer::Agent
       Racer::Trace::Param::TYPES.first
     end
 
-    type_name = shift_constant(data)
+    type_name = shift_constant_instance(data)
 
     Racer::Trace::Param.new(name: name&.to_sym, type_name:, type:)
   end
 
+  def shift_constant_updates(data)
+    constant_update_count = data.shift
+    constant_update_count.times.map do
+      shift_constant(data)
+    end
+  end
+
   def shift_constant(data)
     name = data.shift
+    anonymous = data.shift
     type = data.shift
+
+    superclass = data.shift
+
+    included_modules_count = data.shift
+    included_modules = included_modules_count.times.map { data.shift }
+
+    prepended_modules_count = data.shift
+    prepended_modules = prepended_modules_count.times.map { data.shift }
+
+    extended_modules_count = data.shift
+    extended_modules = extended_modules_count.times.map { data.shift }
+
+    Racer::Trace::Constant.new(
+      name:,
+      anonymous:,
+      type: Racer::Trace::Constant::TYPES.fetch(type),
+      superclass:,
+      included_modules:,
+      prepended_modules:,
+      extended_modules:
+    )
+  end
+
+  def shift_constant_instance(data)
+    name = data.shift
     singleton = data.shift
-    constant_path_size = data.shift
-
-    fragment_name = nil
-    path =
-      constant_path_size.times.map do
-        fragment_name = data.shift
-        fragment_type = Racer::Trace::Constant::TYPES.fetch(data.shift)
-
-        Racer::Trace::Constant::PathFragment.new(name: fragment_name.to_sym, type: fragment_type)
-      end
-
     generic_argument_count = data.shift
+
     generic_arguments =
       generic_argument_count.times.map do
         union_size = data.shift
 
         union_size.times.map do
-          shift_constant(data)
+          shift_constant_instance(data)
         end
       end
 
-    Racer::Trace::Constant.new(
+    Racer::Trace::ConstantInstance.new(
       name:,
-      type: Racer::Trace::Constant::TYPES.fetch(type),
       singleton:,
-      path:,
       generic_arguments:
     )
   end

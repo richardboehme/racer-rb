@@ -3,32 +3,62 @@
 #include <sys/socket.h>
 #include <json-c/json.h>
 
-void write_constant(json_object* json_array, Constant& constant) {
-  json_object_array_add(json_array, json_object_new_string(constant.name));
-  json_object_array_add(json_array, json_object_new_int(constant.type));
-  json_object_array_add(json_array, json_object_new_boolean(constant.singleton));
-  json_object_array_add(json_array, json_object_new_int64(constant.path_size));
+void write_constant(json_object* json_array, std::shared_ptr<Constant> constant) {
+  json_object_array_add(json_array, json_object_new_string(constant->name));
+  json_object_array_add(json_array, json_object_new_boolean(constant->anonymous));
+  json_object_array_add(json_array, json_object_new_int(constant->type));
 
-  for(auto i = 0; i < constant.path_size; ++i) {
-    auto path_fragment = constant.path[i];
-    json_object_array_add(json_array, json_object_new_string(path_fragment.name));
-    json_object_array_add(json_array, json_object_new_int(path_fragment.type));
+  if(constant->superclass.has_value()) {
+    json_object_array_add(json_array, json_object_new_string(constant->superclass.value()));
+  } else {
+    json_object_array_add(json_array, json_object_new_null());
   }
-  json_object_array_add(json_array, json_object_new_int(constant.generic_argument_count));
-  for(auto i = 0; i < constant.generic_argument_count; ++i) {
-    auto generic = constant.generic_arguments[i];
-    json_object_array_add(json_array, json_object_new_int64(generic.union_size));
-    for(auto j = 0; j < generic.union_size; ++j) {
-      write_constant(json_array, generic.union_types[j]);
+
+  json_object_array_add(json_array, json_object_new_uint64(constant->included_modules.size()));
+  for(auto name : constant->included_modules) {
+    json_object_array_add(json_array, json_object_new_string(name));
+  }
+
+  json_object_array_add(json_array, json_object_new_uint64(constant->prepended_modules.size()));
+  for(auto name : constant->prepended_modules) {
+    json_object_array_add(json_array, json_object_new_string(name));
+  }
+
+  json_object_array_add(json_array, json_object_new_uint64(constant->extended_modules.size()));
+  for(auto name : constant->extended_modules) {
+    json_object_array_add(json_array, json_object_new_string(name));
+  }
+}
+
+void write_constant_instance(json_object* json_array, ConstantInstance& instance) {
+  json_object_array_add(json_array, json_object_new_string(instance.name));
+  json_object_array_add(json_array, json_object_new_boolean(instance.singleton));
+  json_object_array_add(json_array, json_object_new_uint64(instance.generic_argument_count));
+  for(int i = 0; i < instance.generic_argument_count; ++i) {
+    json_object_array_add(json_array, json_object_new_uint64(instance.generic_arguments[i].size()));
+    for(auto generic_instance : instance.generic_arguments[i]) {
+      write_constant_instance(json_array, generic_instance);
     }
   }
 }
 
-int size_of_constant(Constant& constant) {
-  auto size = 5 + constant.path_size * 2 + constant.generic_argument_count;
-  for(auto i = 0; i < constant.generic_argument_count; ++i) {
-    for(auto j = 0; j < constant.generic_arguments[i].union_size; ++j) {
-      size += size_of_constant(constant.generic_arguments[i].union_types[j]);
+int size_of_constant(std::shared_ptr<Constant> constant) {
+  return 7 + constant->included_modules.size() + constant->prepended_modules.size() + constant->extended_modules.size();
+}
+
+int size_of_constant_updates(std::vector<std::shared_ptr<Constant>> &constant_updates) {
+  auto size = 1;
+  for(auto constant : constant_updates) {
+    size += size_of_constant(constant);
+  }
+  return size;
+}
+
+int size_of_constant_instance(ConstantInstance& instance) {
+  auto size = 3 + instance.generic_argument_count;
+  for(int i = 0; i < instance.generic_argument_count; ++i) {
+    for(auto generic_instance : instance.generic_arguments[i]) {
+      size += size_of_constant_instance(generic_instance);
     }
   }
   return size;
@@ -37,10 +67,8 @@ int size_of_constant(Constant& constant) {
 int size_of_block_trace(ReturnTrace*);
 
 int size_of_params(ReturnTrace* trace) {
-  auto size = 1;
-  for(auto i = 0; i < trace->params_size; ++i) {
-    size += 2 + size_of_constant(trace->params[i].type_name);
-  }
+  auto size = 1 + trace->params_size * 3;
+
   if(trace->block_param.has_value()) {
     size += 2;
     for(auto block_trace : (*(trace->block_param)).block_traces) {
@@ -51,14 +79,14 @@ int size_of_params(ReturnTrace* trace) {
 }
 
 int size_of_block_trace(ReturnTrace* trace) {
-  return size_of_constant(trace->block_self_type.value()) + size_of_constant(trace->return_type) + size_of_params(trace);
+  return 2 + size_of_params(trace);
 }
 
 void write_params(json_object*, ReturnTrace*);
 
 void write_block_trace(json_object* json_array, ReturnTrace* trace) {
-  write_constant(json_array, trace->block_self_type.value());
-  write_constant(json_array, trace->return_type);
+  write_constant_instance(json_array, trace->block_self_type.value());
+  write_constant_instance(json_array, trace->return_type);
   write_params(json_array, trace);
 }
 
@@ -74,8 +102,7 @@ void write_params(json_object* json_array, ReturnTrace* trace) {
       json_object_array_add(json_array, json_object_new_null());
     }
     json_object_array_add(json_array, json_object_new_int(param.param_type));
-
-    write_constant(json_array, param.type_name);
+    write_constant_instance(json_array, param.type_name);
   }
 
   if(trace->block_param.has_value()) {
@@ -113,7 +140,7 @@ void *init_worker(void *arg)
 
     trace = static_cast<ReturnTrace *>(message->data);
 
-    auto array_size = 3 + size_of_constant(trace->return_type) + size_of_constant(trace->method_owner) + size_of_params(trace);
+    auto array_size = 5 + size_of_params(trace) + size_of_constant_updates(trace->constant_updates);
     auto* json_array = json_object_new_array_ext(array_size);
 
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
@@ -121,8 +148,13 @@ void *init_worker(void *arg)
     json_object_array_add(json_array, json_object_new_int(trace->method_kind));
     json_object_array_add(json_array, json_object_new_int(trace->method_visibility));
 
-    write_constant(json_array, trace->return_type);
-    write_constant(json_array, trace->method_owner);
+    write_constant_instance(json_array, trace->return_type);
+    write_constant_instance(json_array, trace->method_owner);
+
+    json_object_array_add(json_array, json_object_new_uint64(trace->constant_updates.size()));
+    for(auto constant : trace->constant_updates) {
+      write_constant(json_array, constant);
+    }
 
     write_params(json_array, trace);
 

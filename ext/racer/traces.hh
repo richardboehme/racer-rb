@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <optional>
+#include <memory>
 
 enum ParamType {
   REQUIRED = 0,
@@ -30,31 +31,26 @@ enum MethodVisibility {
   PROTECTED = 2,
 };
 
-typedef struct Path {
-  char* name { nullptr };
-  ClassType type { MODULE };
-} Path;
-
-typedef struct GenericArgument GenericArgument;
-
 typedef struct Constant {
   char* name { nullptr };
+  bool anonymous { false };
   ClassType type { MODULE };
-  long path_size { 0 };
-  Path* path { nullptr };
-  unsigned char generic_argument_count { 0 };
-  GenericArgument* generic_arguments { nullptr };
-  bool singleton { false };
+  std::optional<char*> superclass {};
+  std::vector<char*> included_modules {};
+  std::vector<char*> prepended_modules {};
+  std::vector<char*> extended_modules {};
 } Constant;
 
-struct GenericArgument {
-  unsigned long union_size { 0 };
-  Constant* union_types { nullptr };
-};
+typedef struct ConstantInstance {
+  char* name { nullptr };
+  unsigned char generic_argument_count { 0 };
+  std::vector<ConstantInstance>* generic_arguments {};
+  bool singleton { false };
+} ConstantInstance;
 
 typedef struct Parameter {
   char* name { nullptr };
-  Constant type_name {};
+  ConstantInstance type_name { 0 };
   ParamType param_type { REQUIRED };
 } Parameter;
 
@@ -69,18 +65,21 @@ typedef struct BlockParameter {
 
 struct ReturnTrace
 {
-  Constant method_owner {};
+  ConstantInstance method_owner {};
   char *method_name { nullptr };
   MethodKind method_kind { INSTANCE };
   MethodVisibility method_visibility { PUBLIC };
-  Constant return_type {};
+  ConstantInstance return_type {};
   long params_size { 0 };
   Parameter *params { nullptr };
   bool rescued { false };
+
+  std::vector<std::shared_ptr<Constant>> constant_updates {};
+
   std::optional<BlockParameter> block_param {};
   // only relevant for block traces, maybe we could reuse the method_owner Constant but I think it would
   // be even better if we could split those two types anyway
-  std::optional<Constant> block_self_type {};
+  std::optional<ConstantInstance> block_self_type {};
 };
 
 #endif /* TRACES_H */

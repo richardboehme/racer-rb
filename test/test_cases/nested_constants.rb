@@ -15,47 +15,48 @@ Racer.stop
 __END__
 ---
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: A::B::C
     singleton: false
-    type: :class
-    path:
-    - !ruby/object:Racer::Trace::Constant::PathFragment
-      name: :A
-      type: :module
-    - !ruby/object:Racer::Trace::Constant::PathFragment
-      name: :B
-      type: :class
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :public
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: A::B::C
     singleton: false
-    type: :class
-    path:
-    - !ruby/object:Racer::Trace::Constant::PathFragment
-      name: :A
-      type: :module
-    - !ruby/object:Racer::Trace::Constant::PathFragment
-      name: :B
-      type: :class
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
-    type_name: !ruby/object:Racer::Trace::Constant
+    type_name: !ruby/object:Racer::Trace::ConstantInstance
       name: A::B::C
       singleton: false
-      type: :class
-      path:
-      - !ruby/object:Racer::Trace::Constant::PathFragment
-        name: :A
-        type: :module
-      - !ruby/object:Racer::Trace::Constant::PathFragment
-        name: :B
-        type: :class
       generic_arguments: []
     type: :required
   block_param:
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: A
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: A::B
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: A::B::C
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []

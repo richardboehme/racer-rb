@@ -11,7 +11,9 @@ module Racer::Collectors
     end
 
     def collect(trace)
-      push_constant_to_results(trace.method_owner)
+      trace.constant_updates.each do |constant|
+        push_constant_to_results(constant)
+      end
 
       method_type_key =
         case trace.method_kind
@@ -29,22 +31,6 @@ module Racer::Collectors
         end
       end
 
-      push_constant_to_results(trace.return_type)
-
-      trace.params.each do |param|
-        push_constant_to_results(param.type_name)
-      end
-
-      if trace.block_param
-        trace.block_param.traces.each do |block_trace|
-          push_constant_to_results(block_trace.return_type)
-          push_constant_to_results(block_trace.self_type)
-          block_trace.params.each do |param|
-            push_constant_to_results(param.type_name)
-          end
-        end
-      end
-
       @results[trace.method_owner.name][method_type_key][trace.method_name] << trace
     end
 
@@ -54,15 +40,15 @@ module Racer::Collectors
 
       declarations =
         @results.map do |owner_name, owner|
-          owner => { type:, instance_methods:, singleton_methods: }
+          owner => { constant:, instance_methods:, singleton_methods: }
 
-          next if instance_methods.empty? && singleton_methods.empty? && @existing_types.key?(owner_name)
+          next if instance_methods.empty? && singleton_methods.empty? && @existing_types.key?(constant.name)
 
-          case type
+          case constant.type
           when :class
-            to_class_delaration(owner_name, instance_methods, singleton_methods)
+            to_class_delaration(constant.name, instance_methods, singleton_methods)
           when :module
-            to_module_declaration(owner_name, instance_methods, singleton_methods)
+            to_module_declaration(constant.name, instance_methods, singleton_methods)
           else
             puts "Unknown owner type #{type} (#{instance_methods}, #{singleton_methods})"
           end
@@ -75,49 +61,25 @@ module Racer::Collectors
     private
 
     def push_constant_to_results(constant)
-      path = constant.path.dup
-      push_type_to_results(constant.name, constant.type, path.map(&:name))
-
-      until path.empty?
-        absolute_name = path.map(&:name).join("::")
-        fragment = path.pop
-
-        push_type_to_results(absolute_name, fragment.type, path.map(&:name))
-      end
-
-      constant.generic_arguments.each do |argument|
-        argument.each do |type|
-          push_constant_to_results(type)
-        end
-      end
-    end
-
-    def push_type_to_results(name, class_type, path)
-      return if @results.key?(name)
-      return if @existing_types.key?(name)
+      return if @results.key?(constant.name)
+      return if @existing_types.key?(constant.name)
 
       # TODO: Should we refactor this to store the relative name at the Constant class?
       # We also need the absolute path though to check in the maps above
-      start_index = name.rindex(":")
-      if start_index.nil?
-        start_index = 0
-      else
-        start_index += 1
-      end
+      path = constant.name.split("::").map(&:to_sym)
 
-      relative_name = name[start_index..]
       type_name =
         RBS::TypeName.new(
-          name: relative_name.to_sym,
+          name: path.pop,
           namespace: RBS::Namespace.new(path:, absolute: true)
         )
 
       class_decl = @environment.class_decls[type_name]
       if class_decl
-        @existing_types[name] = { class_decl:, type_name: }
+        @existing_types[constant.name] = { class_decl:, type_name: }
       end
 
-      @results[name] = { type: class_type, instance_methods: {}, singleton_methods: {} }
+      @results[constant.name] = { constant:, instance_methods: {}, singleton_methods: {} }
     end
 
     def to_module_declaration(owner, instance_methods, singleton_methods)
@@ -340,7 +302,7 @@ module Racer::Collectors
 
       if has_boolean
         constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
-        constants.push(Racer::Trace::Constant.new(name: "bool", type: :class, path: [], generic_arguments: [], singleton: false))
+        constants.push(Racer::Trace::Constant.new(name: "bool", anonymous: false, type: :class))
       end
 
       if constants.size > 1

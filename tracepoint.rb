@@ -2,9 +2,9 @@
 #   p [:call, caller[0..2], Thread.current.native_thread_id]
 # end
 
-$tp = TracePoint.new(:b_call, :b_return) do |tp|
+$tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
-  p [tp.self]
+  p [tp.self, tp.defined_class]
   #   tp.path,
   #   tp.lineno,
   #   tp.callee_id, # name of method that was called -> in path:lineno
@@ -13,7 +13,7 @@ $tp = TracePoint.new(:b_call, :b_return) do |tp|
   #   # tp.return_value,
   #   tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
   # ]
-end
+end#.enable
 # tp2.enable
 # require_relative "lib/racer"
 
@@ -33,20 +33,15 @@ end
 # end
 
 class Foo
-  def self.foo(&block)
-    $tp.enable(target: block)
-    pro = -> () {}
-    pro.()
-    p "in foo #{block.binding.eval("self")}"
-
-    instance_eval(&block)
+  def self.call
   end
 end
 
-Foo.foo do
-  1.tap {}
-  1
+class Bar < Foo
 end
+
+Bar.()
+
 # B.foo
 # C.new.foo
 

@@ -25,7 +25,8 @@ class RBSCollectorTest < Minitest::Test
     collector.collect(
       trace(
         name: :foo,
-        return_type: String
+        return_type: String,
+        constant_updates: [String]
       )
     )
 
@@ -36,8 +37,8 @@ class RBSCollectorTest < Minitest::Test
     collector = Racer::Collectors::RBSCollector.new
 
     [
-      trace(name: :foo, return_type: String),
-      trace(name: :foo, return_type: Integer),
+      trace(name: :foo, return_type: String, constant_updates: [String]),
+      trace(name: :foo, return_type: Integer, constant_updates: [Integer]),
       trace(
         name: :foo,
         params: [{ name: :a, klass: Integer, type: :required }],
@@ -57,12 +58,13 @@ class RBSCollectorTest < Minitest::Test
       trace(name: :foo, return_type: String, kind: :singleton),
       trace(
         name: :bar,
-        params: [{ name: :a, klass: Array, generic_arguments: [[to_constant(Integer)]], type: :required }],
-        return_type: Integer
+        params: [{ name: :a, klass: Array, generic_arguments: [[Integer]], type: :required }],
+        return_type: Integer,
+        constant_updates: [Array]
       ),
       trace(
         name: :bar,
-        params: [{ name: :a, klass: Array, generic_arguments: [[to_constant(String)]], type: :required }],
+        params: [{ name: :a, klass: Array, generic_arguments: [[String]], type: :required }],
         return_type: String
       )
     ].each { collector.collect(it) }
@@ -75,7 +77,7 @@ class RBSCollectorTest < Minitest::Test
 
     [
       trace(name: :foo, kind: :singleton),
-      trace(name: :foo, owner: TestModule, kind: :singleton),
+      trace(name: :foo, owner: TestModule, kind: :singleton, constant_updates: [TestModule]),
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)
@@ -95,7 +97,8 @@ class RBSCollectorTest < Minitest::Test
           { name: :d, type: :keyword_optional },
           { name: :options, klass: Hash, type: :keyword_rest }
         ],
-        block_param: to_block_param(traces: [])
+        block_param: to_block_param(traces: []),
+        constant_updates: [Array, Hash]
       ),
       trace(name: :bar, params: [
         { name: :*, klass: Array, type: :rest },
@@ -125,22 +128,27 @@ class RBSCollectorTest < Minitest::Test
             name: :a,
             klass: Array,
             generic_arguments: [
-              [to_constant(String), to_constant(Array, generic_arguments: [[to_constant(Integer), to_constant(String)]])]
+              [String, to_constant_instance(Array, generic_arguments: [[Integer, String]])]
             ],
             type: :required
           },
-          { name: :args, klass: Array, generic_arguments: [[to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :rest },
-          { name: :b, klass: Hash, generic_arguments: [[to_constant(Symbol), to_constant(String)], [to_constant(Float), to_constant(Regexp)]], type: :required },
-          { name: :options, klass: Hash, generic_arguments: [[to_constant(Symbol)], [to_constant(A::B::C::D), to_constant(A::B::C::E)]], type: :keyword_rest }
+          { name: :args, klass: Array, generic_arguments: [[A::B::C::D, A::B::C::E]], type: :rest },
+          { name: :b, klass: Hash, generic_arguments: [[Symbol, String], [Float, Regexp]], type: :required },
+          { name: :options, klass: Hash, generic_arguments: [[Symbol], [A::B::C::D, A::B::C::E]], type: :keyword_rest }
         ],
-        return_type: Hash,
-        return_type_generic_arguments: [
-          [
-            to_constant(Symbol),
-            to_constant(A::B), to_constant(Hash, generic_arguments: [[to_constant(Array, generic_arguments: [[to_constant(Integer)]])], [to_constant(Integer), to_constant(Symbol)]])
-          ],
-          [to_constant(String)]
-        ]
+        return_type:
+          to_constant_instance(
+            Hash,
+            generic_arguments: [
+              [
+                Symbol,
+                A::B,
+                to_constant_instance(Hash, generic_arguments: [[to_constant_instance(Array, generic_arguments: [[Integer]])], [Integer, Symbol]])
+              ],
+              [String]
+            ]
+          ),
+        constant_updates: [Array, Hash, Symbol, Integer, String, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
       )
     ].each { collector.collect(it) }
 
@@ -156,6 +164,7 @@ class RBSCollectorTest < Minitest::Test
         owner: Racer::Agent,
         params: [{ name: :a, klass: A::B::C::D, type: :required }],
         return_type: A::B::C::E,
+        constant_updates: [Racer, Racer::Agent, RBSCollectorTest, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
       ),
     ].each { collector.collect(it) }
 
@@ -178,11 +187,11 @@ class RBSCollectorTest < Minitest::Test
     collector = Racer::Collectors::RBSCollector.new
 
     [
-      trace(name: :prime?, owner: Integer),
+      trace(name: :prime?, owner: Integer, constant_updates: [Integer]),
       trace(name: :+, owner: Integer),
       trace(name: :bar, owner: Integer, kind: :singleton),
       trace(name: :sqrt, owner: Integer, kind: :singleton),
-      trace(name: :foo, owner: Hash),
+      trace(name: :foo, owner: Hash, constant_updates: [Hash]),
       trace(name: :initialize, owner: Hash, visibility: :private),
     ].each { collector.collect(it) }
 
@@ -200,7 +209,8 @@ class RBSCollectorTest < Minitest::Test
           { name: :b, klass: TrueClass, type: :required },
           { name: :c, klass: NilClass, type: :required }
         ],
-        return_type: TrueClass
+        return_type: TrueClass,
+        constant_updates: [FalseClass, TrueClass, NilClass]
       ),
       trace(name: :bar, return_type: FalseClass),
       trace(name: :baz, return_type: NilClass),
@@ -237,7 +247,8 @@ class RBSCollectorTest < Minitest::Test
               self_type: Integer
             },
           ]
-        )
+        ),
+        constant_updates: [String, Integer, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
       ),
       trace(
         name: :foo,
@@ -245,7 +256,8 @@ class RBSCollectorTest < Minitest::Test
       ),
       trace(
         name: :bar,
-        block_param: to_block_param(traces: [{ self_type: to_constant(A::B::C::F, singleton: true) }])
+        block_param: to_block_param(traces: [{ self_type: to_constant_instance(A::B::C::F, singleton: true) }]),
+        constant_updates: [A::B::C::F]
       )
     ].each { collector.collect(it) }
 
@@ -299,44 +311,51 @@ class RBSCollectorTest < Minitest::Test
   def trace(
     name:,
     return_type: NilClass,
-    return_type_generic_arguments: [],
     owner: RBSCollectorTest,
     kind: :instance,
     visibility: :public,
     params: [],
-    block_param: nil
+    block_param: nil,
+    constant_updates: []
   )
+    if return_type == NilClass
+      constant_updates << NilClass
+    end
+
+    if owner == RBSCollectorTest
+      constant_updates << RBSCollectorTest
+    end
+
     Racer::Trace.new(
-      method_owner: to_constant(owner),
+      method_owner: to_constant_instance(owner),
       method_name: name.to_s,
       method_kind: kind,
       method_visibility: visibility,
-      return_type: to_constant(return_type, generic_arguments: return_type_generic_arguments),
+      return_type: to_constant_instance(return_type),
       params: params.map { to_param(**it) },
-      block_param:
+      block_param:,
+      constant_updates: constant_updates.map { to_constant(it) }
     )
   end
 
-  def to_constant(klass, generic_arguments: [], singleton: false)
+  def to_constant(klass, anonymous: false, superclass: nil, included_modules: [], prepended_modules: [], extended_modules: [])
+    return klass if klass.is_a?(Racer::Trace::Constant)
+
     Racer::Trace::Constant.new(
       name: klass.name,
+      anonymous:,
       type: klass.is_a?(Class) ? :class : :module,
-      singleton:,
-      path: klass.name.split("::")[...-1].to_enum.with_object(+"").map do |fragment_name, current_path|
-        current_path << "::#{fragment_name}"
-        Racer::Trace::Constant::PathFragment.new(
-          name: fragment_name.to_sym,
-          type: Object.const_get(current_path).is_a?(Class) ? :class : :module
-        )
-      end,
-      generic_arguments:
+      superclass:,
+      included_modules: included_modules.map(&:to_s),
+      prepended_modules: prepended_modules.map(&:to_s),
+      extended_modules: extended_modules.map(&:to_s)
     )
   end
 
   def to_param(name:, klass: NilClass, generic_arguments: [], type:)
     Racer::Trace::Param.new(
       name:,
-      type_name: to_constant(klass, generic_arguments:),
+      type_name: to_constant_instance(klass, generic_arguments:),
       type:
     )
   end
@@ -350,10 +369,20 @@ class RBSCollectorTest < Minitest::Test
 
   def to_block_trace(params: [], self_type: nil, return_type: NilClass, block_param: nil)
     Racer::Trace::BlockTrace.new(
-      self_type: self_type && (self_type.is_a?(Racer::Trace::Constant) ? self_type : to_constant(self_type)),
+      self_type: self_type && to_constant_instance(self_type),
       params: params.map { to_param(**it) },
-      return_type: to_constant(return_type),
+      return_type: to_constant_instance(return_type),
       block_param:
+    )
+  end
+
+  def to_constant_instance(name, singleton: false, generic_arguments: [])
+    return name if name.is_a?(Racer::Trace::ConstantInstance)
+
+    Racer::Trace::ConstantInstance.new(
+      name: name.to_s,
+      singleton:,
+      generic_arguments: generic_arguments.map { |union| union.map { to_constant_instance(it) } }
     )
   end
 end

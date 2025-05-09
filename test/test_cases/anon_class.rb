@@ -17,38 +17,65 @@ Racer.stop
 __END__
 ---
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Foo
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: bar
   method_kind: :instance
   method_visibility: :public
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: NilClass
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   params: []
   block_param:
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Foo
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Foo
+    anonymous: true
+    type: :class
+    superclass: Foo
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::NilClass
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: NilClass
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - JSON::Ext::Generator::GeneratorMethods::NilClass
+    prepended_modules: []
+    extended_modules: []
 - !ruby/object:Racer::Trace
-  method_owner: !ruby/object:Racer::Trace::Constant
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Foo
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :public
-  return_type: !ruby/object:Racer::Trace::Constant
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
     name: NilClass
     singleton: false
-    type: :class
-    path: []
     generic_arguments: []
   params: []
   block_param:
+  constant_updates: []

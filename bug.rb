@@ -10,22 +10,20 @@ TracePoint.new(:call) do |tp|
   end
 end#.enable
 
+Racer.start_agent
 class Foo
-  def initialize
-    1
+  def foo
   end
 end
 
-class Bar < Foo
-  def initialize
-    super()
+a = Class.new(Foo) do
+  def bar
   end
 end
-
 binding.irb
-# Racer.start_agent
-# Racer.start
+Racer.start
 
-Bar.new
+a.new.bar
+a.new.foo
 
-# Racer.stop
+Racer.stop
