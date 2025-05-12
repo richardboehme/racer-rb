@@ -131,11 +131,29 @@ __END__
         generic_arguments: []
   constant_updates:
   - !ruby/object:Racer::Trace::Constant
-    name: Object
-    anonymous: true
-    type: :class
+    name: PP::ObjectMixin
+    anonymous: false
+    type: :module
     superclass:
     included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::Object
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Object
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - PP::ObjectMixin
+    - JSON::Ext::Generator::GeneratorMethods::Object
     prepended_modules: []
     extended_modules: []
   - !ruby/object:Racer::Trace::Constant

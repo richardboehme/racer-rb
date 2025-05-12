@@ -20,7 +20,7 @@ class TestRacer < Minitest::Test
           Racer.flush
           Racer.stop_agent(agent_pid)
 
-          expected = out_file.read
+          actual = out_file.read
           out_file.close
 
           unless defined?(DATA)
@@ -33,7 +33,7 @@ class TestRacer < Minitest::Test
             exit
           end
 
-          actual = DATA.read.chomp!
+          expected = DATA.read.chomp!
 
           if actual != expected
             if #{write}
@@ -44,7 +44,7 @@ class TestRacer < Minitest::Test
                 end
               end
 
-              file.write(expected)
+              file.write(actual)
               file.truncate(file.pos)
               file.close
               $stderr.puts("Updated expected result because A=write was passed")

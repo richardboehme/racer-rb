@@ -1,0 +1,12 @@
+module ::A
+  def foo: () -> nil
+end
+
+module ::PP::ObjectMixin
+end
+
+module ::JSON::Ext::Generator::GeneratorMethods::Object
+end
+
+module ::JSON::Ext::Generator::GeneratorMethods::NilClass
+end

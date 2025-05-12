@@ -11,19 +11,13 @@ TracePoint.new(:call) do |tp|
 end#.enable
 
 Racer.start_agent
-class Foo
-  def foo
-  end
+module A
+  def foo; end
 end
 
-a = Class.new(Foo) do
-  def bar
-  end
-end
-binding.irb
+include A
 Racer.start
 
-a.new.bar
-a.new.foo
+foo
 
 Racer.stop

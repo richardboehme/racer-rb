@@ -180,7 +180,7 @@ __END__
   constant_updates: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Object
+    name: A
     singleton: false
     generic_arguments: []
   method_name: private_method
@@ -194,16 +194,43 @@ __END__
   block_param:
   constant_updates:
   - !ruby/object:Racer::Trace::Constant
-    name: Object
-    anonymous: true
-    type: :class
+    name: A
+    anonymous: false
+    type: :module
     superclass:
     included_modules: []
     prepended_modules: []
     extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: PP::ObjectMixin
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods::Object
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: Object
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules:
+    - A
+    - PP::ObjectMixin
+    - JSON::Ext::Generator::GeneratorMethods::Object
+    prepended_modules: []
+    extended_modules: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Object
+    name: A
     singleton: false
     generic_arguments: []
   method_name: protected_method
@@ -218,7 +245,7 @@ __END__
   constant_updates: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Object
+    name: A
     singleton: false
     generic_arguments: []
   method_name: public_method
@@ -245,15 +272,7 @@ __END__
     generic_arguments: []
   params: []
   block_param:
-  constant_updates:
-  - !ruby/object:Racer::Trace::Constant
-    name: A
-    anonymous: false
-    type: :module
-    superclass:
-    included_modules: []
-    prepended_modules: []
-    extended_modules: []
+  constant_updates: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: A

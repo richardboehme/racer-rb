@@ -278,7 +278,7 @@ __END__
   constant_updates: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: C
+    name: A
     singleton: false
     generic_arguments: []
   method_name: singleton_method
@@ -308,7 +308,7 @@ __END__
     extended_modules: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: C
+    name: A
     singleton: false
     generic_arguments: []
   method_name: instance_method

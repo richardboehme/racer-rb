@@ -22,7 +22,7 @@ __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: B
+    name: A
     singleton: false
     generic_arguments: []
   method_name: foo
@@ -71,7 +71,7 @@ __END__
     extended_modules: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: C
+    name: A
     singleton: false
     generic_arguments: []
   method_name: foo

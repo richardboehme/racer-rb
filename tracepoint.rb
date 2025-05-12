@@ -4,7 +4,8 @@
 
 $tp = TracePoint.new(:call) do |tp|
   # p [:return, caller[0..2]]
-  p [tp.self, tp.defined_class]
+  binding.irb
+  p [tp.self.class, tp.defined_class]
   #   tp.path,
   #   tp.lineno,
   #   tp.callee_id, # name of method that was called -> in path:lineno
@@ -13,7 +14,7 @@ $tp = TracePoint.new(:call) do |tp|
   #   # tp.return_value,
   #   tp.parameters.map { |(type, name)| [name, tp.binding.local_variable_get(name)] }
   # ]
-end#.enable
+end.enable
 # tp2.enable
 # require_relative "lib/racer"
 
@@ -32,15 +33,14 @@ end#.enable
 #   end
 # end
 
-class Foo
-  def self.call
+module A
+  def foo
   end
 end
 
-class Bar < Foo
-end
+include A
 
-Bar.()
+foo
 
 # B.foo
 # C.new.foo

@@ -53,6 +53,8 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
   // TODO: Should we check if we are already in the map here?
   auto constant_type = class_type_by_constant(ruby_constant);
 
+  VALUE class_path = rb_class_path(ruby_constant);
+
   VALUE ruby_constant_name = rb_mod_name(ruby_constant);
   bool anonymous = false;
   if(RB_NIL_P(ruby_constant_name)) {
@@ -78,6 +80,13 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
   std::shared_ptr<Constant> constant = std::make_shared<Constant>(constant_obj);
   auto ancestors = rb_mod_ancestors(ruby_constant);
 
+  // Object is the superclass of all classes (except BasicObject)
+  VALUE stop_object = rb_cObject;
+  if(stop_object == ruby_constant) {
+    // The supplied constant is object
+    stop_object = rb_mKernel;
+  }
+
   auto ancestors_pointer = RARRAY_CONST_PTR(ancestors);
   bool prepended = false;
   std::unordered_set<VALUE> inner_constants = {};
@@ -90,16 +99,15 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
       continue;
     }
 
+    if(ancestor == stop_object) {
+      break;
+    }
+
     if(constant_type == CLASS && rb_type_p(ancestor, T_CLASS)) {
       if(prepended) {
         auto ancestor_inspect = rb_inspect(ancestor);
         rb_warn("Class %s in ancestors of %s before self (prepended class?)", StringValueCStr(ancestor_inspect), constant_name);
         continue;
-      }
-
-      // Object is the superclass of all classes (except BasicObject)
-      if(ancestor == rb_cObject) {
-        break;
       }
 
       auto ancestor_constant = explore_constant(ancestor);
@@ -514,24 +522,11 @@ process_call_event(rb_trace_arg_t *trace_arg)
     trace->method_kind = SINGLETON;
   } else {
     trace->method_kind = INSTANCE;
-    self = rb_class_of(self);
+    self = rb_obj_class(self);
   }
 
-  if(self != defined_class && RB_TYPE_P(self, T_CLASS)) {
-    auto owner = self;
-    if(trace->method_kind == SINGLETON) {
-      owner = rb_singleton_class(self);
-    }
-
-    // Only change the method owner, if self does not implement the method themselves.
-    if(rb_funcall(owner, method_defined, 2, method_id, Qfalse) == Qfalse)  {
-      // method_defined? documentation: "Public and protected methods are matched"
-      // so we need to check for private methods seperately
-      if(rb_funcall(owner, private_method_defined, 2, method_id, Qfalse) == Qfalse)  {
-        defined_class = self;
-      }
-    }
-
+  if(self != defined_class) {
+    explore_constant(self);
   }
 
   trace->method_owner = class_to_constant_instance(defined_class);
@@ -698,7 +693,7 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
       constant_instance.singleton = true;
       trace->block_self_type = constant_instance;
     } else {
-      auto self_class = rb_class_of(self);
+      auto self_class = rb_obj_class(self);
       auto generics = generic_arguments_by_value(self, self_class);
       trace->block_self_type = class_to_constant_instance(self_class, generics.first, generics.second);
     }
