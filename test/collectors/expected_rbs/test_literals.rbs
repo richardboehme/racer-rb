@@ -1,3 +1,12 @@
+class ::FalseClass
+end
+
+class ::TrueClass
+end
+
+class ::NilClass
+end
+
 class ::RBSCollectorTest
   def foo: (bool a, bool b, nil c) -> bool
 

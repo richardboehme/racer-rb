@@ -31,3 +31,10 @@ end
 
 class ::RBSCollectorTest::A::B::C::F
 end
+
+class ::Object
+  include ::RBSCollectorTest::A
+end
+
+class ::NilClass
+end

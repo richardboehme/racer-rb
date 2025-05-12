@@ -1,3 +1,6 @@
+class ::String
+end
+
 class ::RBSCollectorTest
   def foo: () -> (::String | ::Integer)
          | (::Integer a) -> (::String | ::Integer)
@@ -7,4 +10,10 @@ class ::RBSCollectorTest
          | (::Array[::String] a) -> ::String
 
   def self.foo: () -> ::String
+end
+
+class ::Integer
+end
+
+class ::Array[unchecked out Elem]
 end

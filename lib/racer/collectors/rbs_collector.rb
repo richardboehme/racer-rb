@@ -42,8 +42,6 @@ module Racer::Collectors
         @results.map do |owner_name, owner|
           owner => { constant:, instance_methods:, singleton_methods: }
 
-          next if instance_methods.empty? && singleton_methods.empty? && @existing_types.key?(constant.name)
-
           case constant.type
           when :class
             to_class_delaration(constant, instance_methods, singleton_methods)

@@ -1,3 +1,9 @@
+class ::String
+end
+
+class ::Integer
+end
+
 module ::RBSCollectorTest::A
 end
 
@@ -11,6 +17,9 @@ class ::RBSCollectorTest::A::B::C::D
 end
 
 module ::RBSCollectorTest::A::B::C::E
+end
+
+class ::NilClass
 end
 
 class ::RBSCollectorTest

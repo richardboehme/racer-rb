@@ -10,6 +10,9 @@ class ::Integer
                | ...
 end
 
+class ::NilClass
+end
+
 class ::Hash[unchecked out K, unchecked out V]
   def foo: () -> nil
 

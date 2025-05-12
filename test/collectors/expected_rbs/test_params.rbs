@@ -1,3 +1,12 @@
+class ::Array[unchecked out Elem]
+end
+
+class ::Hash[unchecked out K, unchecked out V]
+end
+
+class ::NilClass
+end
+
 class ::RBSCollectorTest
   def foo: (nil a, ?nil b, *untyped args, c: nil, ?d: nil, **untyped options) ?{ (?) -> untyped } -> nil
 
