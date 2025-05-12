@@ -97,7 +97,7 @@ module Racer::Collectors
         if owner.superclass
           RBS::AST::Declarations::Class::Super.new(
             name: to_type_name(owner.superclass),
-            args: type_params_of_existing_class(owner.superclass),
+            args: generic_arguments_of_class(owner.superclass),
             location: nil
           )
         end

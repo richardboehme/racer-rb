@@ -277,7 +277,8 @@ class RBSCollectorTest < Minitest::Test
         to_constant(A::B::C::E, included_modules: [A], prepended_modules: [A::B::C], extended_modules: [A::B::C]),
         A::B::C::F,
         Enumerable,
-        to_constant(Object, included_modules: [A, Enumerable]),
+        Array,
+        to_constant(Object, superclass: Array, included_modules: [A, Enumerable]),
       ])
     ].each { collector.collect(it) }
 

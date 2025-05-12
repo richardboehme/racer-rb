@@ -35,7 +35,10 @@ end
 module ::Enumerable[unchecked out Elem]
 end
 
-class ::Object
+class ::Array[unchecked out Elem]
+end
+
+class ::Object < ::Array[untyped]
   include ::RBSCollectorTest::A
 
   include ::Enumerable[untyped]
