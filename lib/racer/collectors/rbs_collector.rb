@@ -46,9 +46,9 @@ module Racer::Collectors
 
           case constant.type
           when :class
-            to_class_delaration(constant.name, instance_methods, singleton_methods)
+            to_class_delaration(constant, instance_methods, singleton_methods)
           when :module
-            to_module_declaration(constant.name, instance_methods, singleton_methods)
+            to_module_declaration(constant, instance_methods, singleton_methods)
           else
             puts "Unknown owner type #{type} (#{instance_methods}, #{singleton_methods})"
           end
@@ -84,9 +84,9 @@ module Racer::Collectors
 
     def to_module_declaration(owner, instance_methods, singleton_methods)
       RBS::AST::Declarations::Module.new(
-        name: to_type_name(owner),
-        type_params: [],
-        members: to_method_definitions(instance_methods, singleton_methods),
+        name: to_type_name(owner.name),
+        type_params: type_params_of_existing_class(owner.name),
+        members: to_module_members(owner, instance_methods, singleton_methods),
         annotations: [],
         self_types: [],
         location: nil,
@@ -95,15 +95,33 @@ module Racer::Collectors
     end
 
     def to_class_delaration(owner, instance_methods, singleton_methods)
+      super_class =
+        if owner.superclass
+          RBS::AST::Declarations::Class::Super.new(
+            name: to_type_name(owner.superclass),
+            args: type_params_of_existing_class(owner.superclass),
+            location: nil
+          )
+        end
+
       RBS::AST::Declarations::Class.new(
-        name: to_type_name(owner),
-        type_params: type_params_of_existing_class(owner),
-        super_class: nil,
-        members: to_method_definitions(instance_methods, singleton_methods),
+        name: to_type_name(owner.name),
+        type_params: type_params_of_existing_class(owner.name),
+        super_class:,
+        members: to_module_members(owner, instance_methods, singleton_methods),
         annotations: [],
         location: nil,
         comment: nil
       )
+    end
+
+    def to_module_members(constant, instance_methods, singleton_methods)
+      [
+        *to_mixin_definitions(constant.extended_modules, :extend),
+        *to_mixin_definitions(constant.prepended_modules, :prepend),
+        *to_mixin_definitions(constant.included_modules, :include),
+        *to_method_definitions(instance_methods, singleton_methods)
+      ]
     end
 
     def to_method_definitions(instance_methods, singleton_methods)
@@ -284,6 +302,28 @@ module Racer::Collectors
         self_type: self_types.empty? ? nil : to_rbs_type(*self_types),
         required:
       )
+    end
+
+    def to_mixin_definitions(modules, type)
+      klass =
+        case type
+        when :extend
+          RBS::AST::Members::Extend
+        when :prepend
+          RBS::AST::Members::Prepend
+        when :include
+          RBS::AST::Members::Include
+        end
+
+      modules.map do |module_name|
+        klass.new(
+          name: to_type_name(module_name),
+          args: type_params_of_existing_class(module_name),
+          annotations: [],
+          location: nil,
+          comment: nil
+        )
+      end
     end
 
     def to_type_name(type_name_str)

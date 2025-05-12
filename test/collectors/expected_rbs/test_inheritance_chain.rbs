@@ -1,0 +1,33 @@
+class ::RBSCollectorTest
+  def foo: () -> nil
+end
+
+module ::RBSCollectorTest::A
+end
+
+class ::RBSCollectorTest::A::B
+end
+
+module ::RBSCollectorTest::A::B::C
+end
+
+class ::RBSCollectorTest::A::B::C::D < ::RBSCollectorTest::A::B
+  extend ::RBSCollectorTest::A
+
+  prepend ::RBSCollectorTest::A::B::C::E
+
+  include ::RBSCollectorTest::A
+
+  include ::RBSCollectorTest::A::B::C
+end
+
+module ::RBSCollectorTest::A::B::C::E
+  extend ::RBSCollectorTest::A::B::C
+
+  prepend ::RBSCollectorTest::A::B::C
+
+  include ::RBSCollectorTest::A
+end
+
+class ::RBSCollectorTest::A::B::C::F
+end

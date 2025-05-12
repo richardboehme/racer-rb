@@ -264,6 +264,24 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_inheritance_chain
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :foo, constant_updates: [
+        RBSCollectorTest,
+        A,
+        A::B,
+        A::B::C,
+        to_constant(A::B::C::D, superclass: A::B, included_modules: [A, A::B::C], prepended_modules: [A::B::C::E], extended_modules: [A]),
+        to_constant(A::B::C::E, included_modules: [A], prepended_modules: [A::B::C], extended_modules: [A::B::C]),
+        A::B::C::F
+      ])
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?
@@ -345,7 +363,7 @@ class RBSCollectorTest < Minitest::Test
       name: klass.name,
       anonymous:,
       type: klass.is_a?(Class) ? :class : :module,
-      superclass:,
+      superclass: superclass && superclass.to_s,
       included_modules: included_modules.map(&:to_s),
       prepended_modules: prepended_modules.map(&:to_s),
       extended_modules: extended_modules.map(&:to_s)

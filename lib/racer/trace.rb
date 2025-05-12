@@ -24,7 +24,7 @@ class Racer::Trace
   end
 
   class Constant
-    attr_reader :name, :anonymous, :type, :superclass, :included_modules, :prepended_modules
+    attr_reader :name, :anonymous, :type, :superclass, :included_modules, :prepended_modules, :extended_modules
 
     TYPES = [
       :module,
