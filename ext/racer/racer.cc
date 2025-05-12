@@ -588,7 +588,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
 
   if(stack.empty()) {
     // This might happen if the method call that returns now activated our tracepoint
-    rb_warn("[%ld] Unexpected: Call stack empty for method %s\n", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
+    debug_warn("[%ld] Unexpected: Call stack empty for method %s\n", fiber_id, rb_id2name(SYM2ID(rb_tracearg_method_id(trace_arg))));
     return;
   }
 

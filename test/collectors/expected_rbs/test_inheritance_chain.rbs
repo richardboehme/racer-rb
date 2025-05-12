@@ -32,8 +32,13 @@ end
 class ::RBSCollectorTest::A::B::C::F
 end
 
+module ::Enumerable[unchecked out Elem]
+end
+
 class ::Object
   include ::RBSCollectorTest::A
+
+  include ::Enumerable[untyped]
 end
 
 class ::NilClass

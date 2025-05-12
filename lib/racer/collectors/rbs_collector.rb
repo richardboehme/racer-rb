@@ -316,7 +316,7 @@ module Racer::Collectors
       modules.map do |module_name|
         klass.new(
           name: to_type_name(module_name),
-          args: type_params_of_existing_class(module_name),
+          args: generic_arguments_of_class(module_name),
           annotations: [],
           location: nil,
           comment: nil
@@ -363,25 +363,27 @@ module Racer::Collectors
             location: nil
           )
         else
-          existing_type = @environment.class_decls[type_name]
-          type_params = existing_type&.type_params || []
-
-          args =
-            if constant.generic_arguments.size == type_params.size
-              constant.generic_arguments.map do |union_types|
-                to_rbs_type(*union_types)
-              end
-            else
-              type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
-            end
-
-
           RBS::Types::ClassInstance.new(
             name: type_name,
-            args:,
+            args: generic_arguments_of_class(constant.name, constant.generic_arguments),
             location: nil
           )
         end
+      end
+    end
+
+    def generic_arguments_of_class(name, existing_generic_arguments = [])
+      return [] unless @existing_types.key?(name)
+
+      existing_type = @existing_types[name][:class_decl]
+      type_params = existing_type&.type_params || []
+
+      if existing_generic_arguments.size == type_params.size
+        existing_generic_arguments.map do |union_types|
+          to_rbs_type(*union_types)
+        end
+      else
+        type_params.map { |param| RBS::Types::Bases::Any.new(location: nil) }
       end
     end
 
