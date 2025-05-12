@@ -50,10 +50,12 @@ class_type_by_constant(VALUE constant) {
 
 static std::shared_ptr<Constant>
 explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constants = nullptr) {
-  // TODO: Should we check if we are already in the map here?
-  auto constant_type = class_type_by_constant(ruby_constant);
+  auto existing_constant = constant_map.find(ruby_constant);
+  if(existing_constant != constant_map.end()) {
+    return (*existing_constant).second;
+  }
 
-  VALUE class_path = rb_class_path(ruby_constant);
+  auto constant_type = class_type_by_constant(ruby_constant);
 
   VALUE ruby_constant_name = rb_mod_name(ruby_constant);
   bool anonymous = false;
@@ -69,15 +71,39 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
 
         ruby_constant_name = rb_class_path_cached(klass);
       } while(RB_NIL_P(ruby_constant_name));
+
+      ruby_constant_name = rb_str_plus(ruby_constant_name, rb_fix2str(INT2FIX(ruby_constant), 10));
     } else {
       // Module
-      ruby_constant_name = rb_str_new_cstr("Module");
+      ruby_constant_name = rb_str_append(rb_str_new_cstr("Module"), rb_fix2str(INT2FIX(ruby_constant), 10));
     }
   }
+
   auto constant_name = strdup(StringValueCStr(ruby_constant_name));
 
   Constant constant_obj = { constant_name, anonymous, constant_type };
   std::shared_ptr<Constant> constant = std::make_shared<Constant>(constant_obj);
+  constant_map.emplace(ruby_constant, constant);
+
+  if(!anonymous) {
+    // Explore namespace
+    auto current_space = rb_cObject;
+    auto class_name_str = strdup(StringValueCStr(ruby_constant_name));
+    long constant_path_size = 0;
+    char* occurence = nullptr;
+    do {
+      occurence = strstr(class_name_str, "::");
+
+      if(!occurence) break;
+
+      occurence[0] = '\0';
+      current_space = rb_const_get_at(current_space, rb_intern(class_name_str));
+      explore_constant(current_space);
+
+      class_name_str = occurence + 2;
+    } while(occurence != nullptr);
+  }
+
   auto ancestors = rb_mod_ancestors(ruby_constant);
 
   // Object is the superclass of all classes (except BasicObject)
@@ -88,7 +114,7 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
   }
 
   auto ancestors_pointer = RARRAY_CONST_PTR(ancestors);
-  bool prepended = false;
+  bool prepended = true;
   std::unordered_set<VALUE> inner_constants = {};
   for(auto i = 0; i < rb_array_len(ancestors); ++i) {
     auto ancestor = ancestors_pointer[i];
@@ -167,44 +193,13 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
     }
   }
 
-  auto result = constant_map.emplace(ruby_constant, constant);
-
-  if(result.second) {
-    constant_updates.push_back(ruby_constant);
-  }
-
+  constant_updates.push_back(ruby_constant);
   return constant;
 }
 
 static ConstantInstance
 class_to_constant_instance(VALUE klass, unsigned char generic_argument_count = 0, std::vector<ConstantInstance>* generic_arguments = nullptr) {
-  auto existing_constant = constant_map.find(klass);
-  std::shared_ptr<Constant> constant;
-  if(existing_constant == constant_map.end()) {
-    auto class_name = rb_mod_name(klass);
-    if(!RB_NIL_P(class_name)) {
-      auto current_space = rb_cObject;
-      auto class_name_str = strdup(StringValueCStr(class_name));
-      long constant_path_size = 0;
-      char* occurence = nullptr;
-      do {
-        occurence = strstr(class_name_str, "::");
-
-        if(!occurence) break;
-
-        occurence[0] = '\0';
-        current_space = rb_const_get_at(current_space, rb_intern(class_name_str));
-        explore_constant(current_space);
-
-        class_name_str = occurence + 2;
-      } while(occurence != nullptr);
-    }
-
-    constant = explore_constant(klass);
-  } else {
-    constant = (*existing_constant).second;
-  }
-
+  auto constant = explore_constant(klass);
 
   return { constant->name, generic_argument_count, generic_arguments };
 }

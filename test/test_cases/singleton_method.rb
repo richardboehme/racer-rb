@@ -41,6 +41,38 @@ __END__
     prepended_modules: []
     extended_modules: []
   - !ruby/object:Racer::Trace::Constant
+    name: JSON
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
     name: JSON::Ext::Generator::GeneratorMethods::NilClass
     anonymous: false
     type: :module

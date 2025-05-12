@@ -18,7 +18,7 @@ __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Foo
+    name: Foo126052819293760
     singleton: false
     generic_arguments: []
   method_name: bar
@@ -40,10 +40,42 @@ __END__
     prepended_modules: []
     extended_modules: []
   - !ruby/object:Racer::Trace::Constant
-    name: Foo
+    name: Foo126052819293760
     anonymous: true
     type: :class
     superclass: Foo
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
+  - !ruby/object:Racer::Trace::Constant
+    name: JSON::Ext::Generator::GeneratorMethods
+    anonymous: false
+    type: :module
+    superclass:
     included_modules: []
     prepended_modules: []
     extended_modules: []
