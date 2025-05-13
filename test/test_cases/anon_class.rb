@@ -18,7 +18,7 @@ __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Foo126052819293760
+    name: Foo127101234517160
     singleton: false
     generic_arguments: []
   method_name: bar
@@ -40,7 +40,7 @@ __END__
     prepended_modules: []
     extended_modules: []
   - !ruby/object:Racer::Trace::Constant
-    name: Foo126052819293760
+    name: Foo127101234517160
     anonymous: true
     type: :class
     superclass: Foo

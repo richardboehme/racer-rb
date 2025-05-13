@@ -42,6 +42,8 @@ class ::Object < ::Array[untyped]
   include ::RBSCollectorTest::A
 
   include ::Enumerable[untyped]
+
+  def each: () { (untyped) -> untyped } -> untyped
 end
 
 class ::NilClass

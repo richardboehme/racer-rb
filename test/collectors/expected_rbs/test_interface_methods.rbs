@@ -1,0 +1,34 @@
+module ::Enumerable[unchecked out Elem]
+end
+
+module ::Comparable
+end
+
+class ::RBSCollectorTest::A::B
+  include ::Enumerable[untyped]
+
+  def each: () { (untyped) -> untyped } -> untyped
+end
+
+class ::RBSCollectorTest::A::B::C::F
+  prepend ::Enumerable[untyped]
+
+  def each: () { (untyped) -> untyped } -> untyped
+end
+
+class ::RBSCollectorTest::A::B::C::D
+  extend ::Enumerable[untyped]
+
+  def self.each: () { (untyped) -> untyped } -> untyped
+end
+
+class ::String
+  include ::Comparable
+end
+
+class ::NilClass
+end
+
+class ::RBSCollectorTest
+  def foo: () -> nil
+end

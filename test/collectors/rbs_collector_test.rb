@@ -285,6 +285,23 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_interface_methods
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :foo, constant_updates: [
+        Enumerable,
+        Comparable,
+        to_constant(A::B, included_modules: [Enumerable]),
+        to_constant(A::B::C::F, prepended_modules: [Enumerable]),
+        to_constant(A::B::C::D, extended_modules: [Enumerable]),
+        to_constant(String, included_modules: [Comparable])
+      ])
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?

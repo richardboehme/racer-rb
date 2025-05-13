@@ -118,7 +118,57 @@ module Racer::Collectors
         *to_mixin_definitions(constant.extended_modules, :extend),
         *to_mixin_definitions(constant.prepended_modules, :prepend),
         *to_mixin_definitions(constant.included_modules, :include),
-        *to_method_definitions(instance_methods, singleton_methods)
+        *to_method_definitions(instance_methods, singleton_methods),
+        *required_interface_definitions(constant, instance_methods, singleton_methods)
+      ]
+    end
+
+    def required_interface_definitions(constant, instance_methods, singleton_methods)
+      required_interface_members = ->(modules, existing_methods, kind) do
+        needed_methods = {}
+
+        existing_type = @existing_types[constant.name]
+
+        instance =
+          if existing_type
+            case kind
+            when :instance
+              @definition_builder.build_instance(existing_type[:type_name])
+            when :singleton
+              @definition_builder.build_singleton(existing_type[:type_name])
+            end
+          end
+
+        modules.each do |module_name|
+          module_existing_type = @existing_types[module_name]
+          next unless module_existing_type
+
+          type_name = module_existing_type[:type_name]
+
+          ancestors = @definition_builder.ancestor_builder.one_instance_ancestors(type_name)
+          ancestors.each_self_type do |self_type|
+            next unless @environment.interface_name?(self_type.name)
+
+            interface_definition = @definition_builder.build_interface(self_type.name)
+            needed_methods.merge!(interface_definition.methods)
+          end
+        end
+
+        needed_methods.filter_map do |name, definition|
+          next if existing_methods.key?(name.to_s)
+          next if instance && instance.methods[name]&.implemented_in
+
+          defined_member = definition.defs.first.member
+          overload = defined_member.overloads.first
+          method_type = overload.method_type.map_type { RBS::Types::Bases::Any.new(location: nil) }
+
+          defined_member.update(kind:, overloads: [overload.update(method_type:)])
+        end
+      end
+
+      [
+        *required_interface_members.([*constant.prepended_modules, *constant.included_modules], instance_methods, :instance),
+        *required_interface_members.(constant.extended_modules, singleton_methods, :singleton)
       ]
     end
 
