@@ -2,7 +2,7 @@ class ::RBSCollectorTest
   def foo: () -> nil
 end
 
-module ::RBSCollectorTest::A
+module ::RBSCollectorTest::A : ::BasicObject
 end
 
 class ::RBSCollectorTest::A::B
@@ -32,7 +32,7 @@ end
 class ::RBSCollectorTest::A::B::C::F
 end
 
-module ::Enumerable[unchecked out Elem]
+module ::Enumerable[unchecked out Elem] : ::BasicObject
 end
 
 class ::Array[unchecked out Elem]

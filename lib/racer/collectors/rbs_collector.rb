@@ -8,6 +8,9 @@ module Racer::Collectors
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
       @existing_types = {}
+      # Modules that are included or prepended to the Object class
+      # need to have a self type that is not Object (for example BasicObject)
+      @modules_in_object_class = Set.new
     end
 
     def collect(trace)
@@ -77,16 +80,33 @@ module Racer::Collectors
         @existing_types[constant.name] = { class_decl:, type_name: }
       end
 
+      if constant.name == "Object"
+        constant.included_modules.each do |module_name|
+          @modules_in_object_class.add(module_name)
+        end
+
+        constant.prepended_modules.each do |module_name|
+          @modules_in_object_class.add(module_name)
+        end
+      end
+
       @results[constant.name] = { constant:, instance_methods: {}, singleton_methods: {} }
     end
 
     def to_module_declaration(owner, instance_methods, singleton_methods)
+      self_types =
+        if @modules_in_object_class.include?(owner.name)
+          [RBS::AST::Declarations::Module::Self.new(name: to_type_name("BasicObject"), args: [], location: nil)]
+        else
+          []
+        end
+
       RBS::AST::Declarations::Module.new(
         name: to_type_name(owner.name),
         type_params: type_params_of_existing_class(owner.name),
         members: to_module_members(owner, instance_methods, singleton_methods),
         annotations: [],
-        self_types: [],
+        self_types:,
         location: nil,
         comment: nil
       )
