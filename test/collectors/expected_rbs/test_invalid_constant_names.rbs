@@ -1,0 +1,29 @@
+module ::IO::Generic_readable
+end
+
+class ::IO
+  include ::IO::Generic_readable
+end
+
+module ::IO::Generic_writable
+end
+
+module ::IO::Bar
+end
+
+module ::IO::Bar::Invalid
+end
+
+module ::IO::Foo
+end
+
+module ::IO::Foo::Invalid_constant
+end
+
+class ::Array[unchecked out Elem]
+end
+
+class ::RBSCollectorTest
+  def foo: (::IO::Generic_writable a) -> ::Array[::IO::Foo::Invalid_constant]
+         | () -> ::IO::Bar::Invalid
+end

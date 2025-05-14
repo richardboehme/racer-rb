@@ -278,8 +278,34 @@ class RBSCollectorTest < Minitest::Test
         A::B::C::F,
         Enumerable,
         Array,
-        to_constant(Object, superclass: Array, included_modules: [A, Enumerable]),
+        to_constant(Object, superclass: Array, included_modules: [A, Enumerable])
       ])
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
+  def test_invalid_constant_names
+     collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(
+        name: :foo,
+        constant_updates: [
+          # Those classes actually exist and cause syntax errors in RBS
+          to_constant("IO::generic_readable"),
+          to_constant(IO, included_modules: ["IO::generic_readable"]),
+          to_constant("IO::generic_writable"),
+          to_constant("IO::Bar"),
+          to_constant("IO::Bar::invalid"),
+          to_constant("IO::Foo"),
+          to_constant("IO::Foo::invalid_constant"),
+          to_constant(Array)
+        ],
+        params: [{ name: :a, klass: "IO::generic_writable", type: :required }],
+        return_type: to_constant_instance("Array", generic_arguments: [["IO::Foo::invalid_constant"]])
+      ),
+      trace(name: :foo, return_type: to_constant_instance("IO::Bar::invalid"))
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)
@@ -380,7 +406,7 @@ class RBSCollectorTest < Minitest::Test
     return klass if klass.is_a?(Racer::Trace::Constant)
 
     Racer::Trace::Constant.new(
-      name: klass.name,
+      name: klass.to_s,
       anonymous:,
       type: klass.is_a?(Class) ? :class : :module,
       superclass: superclass && superclass.to_s,

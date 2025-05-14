@@ -2,6 +2,40 @@ require "rbs"
 
 module Racer::Collectors
   class RBSCollector
+    module EnsureValidConstantName
+      def self.valid_name(name)
+        return unless name
+
+        name.split("::").map do |fragment|
+          fragment[0].upcase.concat(fragment[1..])
+        end.join("::")
+      end
+
+      def ensure_valid_name!
+        return if defined?(@original_name)
+        @original_name = @name
+        @name = EnsureValidConstantName.valid_name(@name)
+      end
+
+      refine Racer::Trace::Constant do
+        import_methods EnsureValidConstantName
+
+        def ensure_valid_names!
+          ensure_valid_name!
+
+          @superclass = EnsureValidConstantName.valid_name(@superclass)
+          @included_modules = @included_modules.map { EnsureValidConstantName.valid_name(it) }
+          @prepended_modules = @prepended_modules.map { EnsureValidConstantName.valid_name(it) }
+          @extended_modules = @extended_modules.map { EnsureValidConstantName.valid_name(it) }
+        end
+      end
+
+      refine Racer::Trace::ConstantInstance do
+        import_methods EnsureValidConstantName
+      end
+    end
+    using EnsureValidConstantName
+
     def initialize
       @results = {}
       loader = RBS::EnvironmentLoader.new
@@ -15,6 +49,8 @@ module Racer::Collectors
 
     def collect(trace)
       trace.constant_updates.each do |constant|
+        constant.ensure_valid_names!
+
         push_constant_to_results(constant)
       end
 
@@ -418,6 +454,7 @@ module Racer::Collectors
       end
 
       constant = constants.first
+      constant.ensure_valid_name!
 
       case constant.name
       when "bool"
