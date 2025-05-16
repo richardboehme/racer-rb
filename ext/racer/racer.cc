@@ -226,7 +226,7 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
       for(auto j = 0; j < rb_array_len(value); ++j) {
         auto item = ary_ptr[j];
 
-        auto klass = rb_class_of(item);
+        auto klass = rb_obj_class(item);
         auto generic_arguments = generic_arguments_by_value(item, klass, depth + 1);
         if(generic_arguments.first == 0) {
           auto result = types.insert(klass);
@@ -261,7 +261,7 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
       // This is O(2n) and thus could be pretty slow
       for(auto j = 0; j < hash_size; ++j) {
         auto key = ary_ptr[j * 2];
-        auto key_type = rb_class_of(key);
+        auto key_type = rb_obj_class(key);
         auto key_generics = generic_arguments_by_value(key, key_type, depth + 1);
         if(key_generics.first == 0) {
           auto key_result = key_types.insert(key_type);
@@ -274,7 +274,7 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
 
 
         auto value = ary_ptr[j * 2 + 1];
-        auto value_type = rb_class_of(value);
+        auto value_type = rb_obj_class(value);
         auto value_generics = generic_arguments_by_value(value, value_type, depth + 1);
         if(value_generics.first == 0) {
           auto value_result = value_types.insert(value_type);
@@ -403,7 +403,6 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
           auto block = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
 
           if(!RB_NIL_P(block)) {
-            auto inspect = rb_inspect(block);
             auto tp = rb_tracepoint_new(Qnil, RUBY_EVENT_B_CALL | RUBY_EVENT_B_RETURN, process_block_tracepoint, trace);
             auto hash = rb_hash_new_capa(2);
             rb_hash_aset(hash, rb_id2sym(rb_intern("tp")), tp);
@@ -431,7 +430,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
         param_class = rb_cHash;
       } else {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-        param_class = rb_class_of(value);
+        param_class = rb_obj_class(value);
 
         auto generics = generic_arguments_by_value(value, param_class);
         generic_argument_size = generics.first;
@@ -626,7 +625,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   //fprintf(stderr, "[%ld] popped method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
 
   auto return_value = rb_tracearg_return_value(trace_arg);
-  auto return_value_class = rb_class_of(return_value);
+  auto return_value_class = rb_obj_class(return_value);
   auto generics = generic_arguments_by_value(return_value, return_value_class);
   trace->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
 
@@ -741,7 +740,7 @@ process_block_return_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   }
 
   auto return_value = rb_tracearg_return_value(trace_arg);
-  auto return_value_class = rb_class_of(return_value);
+  auto return_value_class = rb_obj_class(return_value);
   auto generics = generic_arguments_by_value(return_value, return_value_class);
   last_block_call->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
   block_param.block_traces.push_back(last_block_call);

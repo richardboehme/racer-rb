@@ -25,7 +25,7 @@ class TestRacer < Minitest::Test
 
           unless defined?(DATA)
             if #{write}
-              File.write("#{test_case}", "__END__\\n\#{expected}", mode: "a")
+              File.write("#{test_case}", "__END__\\n\#{actual}", mode: "a")
               $stderr.puts("Wrote expected result because A=write was passed")
             else
               $stderr.puts "Undefined expectation. Please use A=write rake test to generate the expected trace"
