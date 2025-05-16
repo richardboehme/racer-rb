@@ -1,0 +1,12 @@
+class ::RBS::Unnamed::Random_Base
+end
+
+class ::Random < ::RBS::Unnamed::Random_Base
+end
+
+class ::NilClass
+end
+
+class ::RBSCollectorTest
+  def foo: () -> nil
+end

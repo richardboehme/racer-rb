@@ -278,7 +278,9 @@ class RBSCollectorTest < Minitest::Test
         A::B::C::F,
         Enumerable,
         Array,
-        to_constant(Object, superclass: Array, included_modules: [A, Enumerable])
+        Racer,
+        to_constant(Racer::Agent, superclass: Array),
+        to_constant(Object, included_modules: [A, Enumerable])
       ])
     ].each { collector.collect(it) }
 
@@ -322,6 +324,19 @@ class RBSCollectorTest < Minitest::Test
         to_constant(A::B::C::F, prepended_modules: [Enumerable]),
         to_constant(A::B::C::D, extended_modules: [Enumerable]),
         to_constant(String, included_modules: [Comparable])
+      ])
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
+  def test_unnamed_rbs_classes
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(name: :foo, constant_updates: [
+        Random::Base,
+        to_constant(Random, superclass: Random::Base)
       ])
     ].each { collector.collect(it) }
 

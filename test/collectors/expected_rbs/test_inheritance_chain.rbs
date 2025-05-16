@@ -38,7 +38,13 @@ end
 class ::Array[unchecked out Elem]
 end
 
-class ::Object < ::Array[untyped]
+module ::Racer
+end
+
+class ::Racer::Agent < ::Array[untyped]
+end
+
+class ::Object
   include ::RBSCollectorTest::A
 
   include ::Enumerable[untyped]

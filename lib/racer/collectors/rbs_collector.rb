@@ -28,6 +28,11 @@ module Racer::Collectors
           @prepended_modules = @prepended_modules.map { EnsureValidConstantName.valid_name(it) }
           @extended_modules = @extended_modules.map { EnsureValidConstantName.valid_name(it) }
         end
+
+        def set_alias!(alias_name)
+          @original_name = @name
+          @name = alias_name
+        end
       end
 
       refine Racer::Trace::ConstantInstance do
@@ -114,6 +119,10 @@ module Racer::Collectors
       class_decl = @environment.class_decls[type_name]
       if class_decl
         @existing_types[constant.name] = { class_decl:, type_name: }
+
+        if constant.superclass && @results.key?(constant.superclass) && constant.superclass != class_decl.primary.decl.super_class.name.to_s
+          @results[constant.superclass][:constant].set_alias!(class_decl.primary.decl.super_class.name.to_s.delete_prefix("::"))
+        end
       end
 
       if constant.name == "Object"
@@ -150,10 +159,12 @@ module Racer::Collectors
 
     def to_class_delaration(owner, instance_methods, singleton_methods)
       super_class =
-        if owner.superclass
+        if owner.superclass && @results.key?(owner.superclass)
+          constant = @results[owner.superclass][:constant]
+
           RBS::AST::Declarations::Class::Super.new(
-            name: to_type_name(owner.superclass),
-            args: generic_arguments_of_class(owner.superclass),
+            name: to_type_name(constant.name),
+            args: generic_arguments_of_class(constant.name),
             location: nil
           )
         end
