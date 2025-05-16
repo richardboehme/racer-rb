@@ -33,6 +33,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: foo
   method_kind: :instance
   method_visibility: :private
@@ -148,6 +149,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: bar
   method_kind: :instance
   method_visibility: :private

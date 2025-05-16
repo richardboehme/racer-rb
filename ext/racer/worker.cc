@@ -140,7 +140,13 @@ void *init_worker(void *arg)
 
     trace = static_cast<ReturnTrace *>(message->data);
 
-    auto array_size = 5 + size_of_params(trace) + size_of_constant_updates(trace->constant_updates);
+    auto array_size = 2 + size_of_constant_instance(trace->return_type) + size_of_constant_instance(trace->method_owner) + size_of_params(trace) + size_of_constant_updates(trace->constant_updates);
+    if(trace->method_callee.has_value()) {
+      array_size += size_of_constant_instance(trace->method_callee.value());
+    } else {
+      array_size += 1;
+    }
+
     auto* json_array = json_object_new_array_ext(array_size);
 
     // method_name,return_type,owner_name,owner_type,namespace_size,[path_name,path_type,*],...
@@ -150,6 +156,11 @@ void *init_worker(void *arg)
 
     write_constant_instance(json_array, trace->return_type);
     write_constant_instance(json_array, trace->method_owner);
+    if(trace->method_callee.has_value()) {
+      write_constant_instance(json_array, trace->method_callee.value());
+    } else {
+      json_object_array_add(json_array, json_object_new_null());
+    }
 
     json_object_array_add(json_array, json_object_new_uint64(trace->constant_updates.size()));
     for(auto constant : trace->constant_updates) {

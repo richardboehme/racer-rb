@@ -1,0 +1,6 @@
+class ::RBSCollectorTest::A::B
+  def foo: (::String a) -> ::Integer
+end
+
+class ::RBSCollectorTest
+end

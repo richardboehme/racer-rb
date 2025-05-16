@@ -53,6 +53,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: foo
   method_kind: :instance
   method_visibility: :private
@@ -350,6 +351,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: bar
   method_kind: :instance
   method_visibility: :private
@@ -390,6 +392,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: anon
   method_kind: :instance
   method_visibility: :private
@@ -421,6 +424,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: baz
   method_kind: :instance
   method_visibility: :private
@@ -452,6 +456,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: block_without_parameter
   method_kind: :instance
   method_visibility: :private
@@ -469,6 +474,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: block_without_parameter
   method_kind: :instance
   method_visibility: :private
@@ -486,6 +492,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: nilkey
   method_kind: :instance
   method_visibility: :private
@@ -508,6 +515,7 @@ __END__
     name: Object
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: arr_params
   method_kind: :instance
   method_visibility: :private

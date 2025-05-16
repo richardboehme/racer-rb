@@ -68,6 +68,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: private_singleton_method
   method_kind: :singleton
   method_visibility: :private
@@ -140,6 +141,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: protected_singleton_method
   method_kind: :singleton
   method_visibility: :protected
@@ -155,6 +157,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: public_singleton_method
   method_kind: :singleton
   method_visibility: :public
@@ -170,6 +173,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: private_method
   method_kind: :instance
   method_visibility: :private
@@ -185,6 +189,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: protected_method
   method_kind: :instance
   method_visibility: :protected
@@ -200,6 +205,7 @@ __END__
     name: Foo
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: public_method
   method_kind: :instance
   method_visibility: :public
@@ -213,6 +219,10 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: A
+    singleton: false
+    generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: Object
     singleton: false
     generic_arguments: []
   method_name: private_method
@@ -290,6 +300,10 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: Object
+    singleton: false
+    generic_arguments: []
   method_name: protected_method
   method_kind: :instance
   method_visibility: :protected
@@ -303,6 +317,10 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: A
+    singleton: false
+    generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: Object
     singleton: false
     generic_arguments: []
   method_name: public_method
@@ -320,6 +338,7 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: private_singleton_method
   method_kind: :singleton
   method_visibility: :private
@@ -335,6 +354,7 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: protected_singleton_method
   method_kind: :singleton
   method_visibility: :protected
@@ -350,6 +370,7 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: public_singleton_method
   method_kind: :singleton
   method_visibility: :public

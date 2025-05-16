@@ -1,5 +1,5 @@
 class Racer::Trace
-  attr_reader :method_owner, :method_name, :method_kind, :method_visibility, :return_type, :params, :block_param, :constant_updates
+  attr_reader :method_owner, :method_callee, :method_name, :method_kind, :method_visibility, :return_type, :params, :block_param, :constant_updates
 
   KINDS = [
     :instance,
@@ -12,8 +12,9 @@ class Racer::Trace
     :protected
   ].freeze
 
-  def initialize(method_owner:, method_name:, method_kind:, method_visibility:, return_type:, params:, constant_updates: [], block_param: nil)
+  def initialize(method_owner:, method_callee:, method_name:, method_kind:, method_visibility:, return_type:, params:, constant_updates: [], block_param: nil)
     @method_owner = method_owner
+    @method_callee = method_callee
     @method_name = method_name
     @method_kind = method_kind
     @method_visibility = method_visibility

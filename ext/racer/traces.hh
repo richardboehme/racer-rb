@@ -66,6 +66,8 @@ typedef struct BlockParameter {
 struct ReturnTrace
 {
   ConstantInstance method_owner {};
+  // Won't be set if callee is equal to owner
+  std::optional<ConstantInstance> method_callee {};
   char *method_name { nullptr };
   MethodKind method_kind { INSTANCE };
   MethodVisibility method_visibility { PUBLIC };

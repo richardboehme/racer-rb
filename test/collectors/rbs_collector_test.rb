@@ -343,6 +343,24 @@ class RBSCollectorTest < Minitest::Test
     assert_rbs(__method__, collector)
   end
 
+  def test_different_callee
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(
+        name: :foo,
+        constant_updates: [
+          A::B
+        ],
+        params: [{ name: :a, klass: String, type: :required }],
+        return_type: Integer,
+        callee: A::B
+      )
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
   private
 
   def write?
@@ -391,6 +409,7 @@ class RBSCollectorTest < Minitest::Test
     name:,
     return_type: NilClass,
     owner: RBSCollectorTest,
+    callee: nil,
     kind: :instance,
     visibility: :public,
     params: [],
@@ -407,6 +426,7 @@ class RBSCollectorTest < Minitest::Test
 
     Racer::Trace.new(
       method_owner: to_constant_instance(owner),
+      method_callee: callee && to_constant_instance(callee),
       method_name: name.to_s,
       method_kind: kind,
       method_visibility: visibility,

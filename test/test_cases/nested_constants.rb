@@ -19,6 +19,7 @@ __END__
     name: A::B::C
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: foo
   method_kind: :instance
   method_visibility: :public

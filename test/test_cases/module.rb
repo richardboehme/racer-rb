@@ -30,6 +30,10 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: B
+    singleton: false
+    generic_arguments: []
   method_name: foo
   method_kind: :instance
   method_visibility: :public
@@ -111,6 +115,10 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: C
+    singleton: false
+    generic_arguments: []
   method_name: foo
   method_kind: :singleton
   method_visibility: :public
@@ -133,6 +141,10 @@ __END__
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: A
+    singleton: false
+    generic_arguments: []
+  method_callee: !ruby/object:Racer::Trace::ConstantInstance
+    name: D
     singleton: false
     generic_arguments: []
   method_name: foo

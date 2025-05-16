@@ -67,15 +67,17 @@ module Racer::Collectors
           :singleton_methods
         end
 
-      @results[trace.method_owner.name][method_type_key][trace.method_name] ||= []
+      owner = trace.method_callee || trace.method_owner
 
-      @results[trace.method_owner.name][method_type_key][trace.method_name].each do |traces|
+      @results[owner.name][method_type_key][trace.method_name] ||= []
+
+      @results[owner.name][method_type_key][trace.method_name].each do |traces|
         if traces.params == trace.params && traces.return_type == trace.return_type && traces.block_param == trace.block_param
           return
         end
       end
 
-      @results[trace.method_owner.name][method_type_key][trace.method_name] << trace
+      @results[owner.name][method_type_key][trace.method_name] << trace
     end
 
     def stop(path: "output.rbs")

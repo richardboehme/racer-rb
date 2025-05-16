@@ -107,6 +107,13 @@ class Racer::Agent
 
           return_type = shift_constant_instance(data)
           method_owner = shift_constant_instance(data)
+          method_callee =
+            if data.first
+              shift_constant_instance(data)
+            else
+              # pop nil from data
+              data.shift
+            end
 
           constant_updates = shift_constant_updates(data)
 
@@ -120,6 +127,7 @@ class Racer::Agent
           @queue.push(
             Racer::Trace.new(
               method_owner:,
+              method_callee:,
               method_name:,
               method_kind:,
               method_visibility:,

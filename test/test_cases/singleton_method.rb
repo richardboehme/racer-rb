@@ -22,6 +22,7 @@ __END__
     name: A
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: foo
   method_kind: :singleton
   method_visibility: :public
@@ -94,6 +95,7 @@ __END__
     name: B
     singleton: false
     generic_arguments: []
+  method_callee:
   method_name: bar
   method_kind: :singleton
   method_visibility: :public

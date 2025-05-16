@@ -520,8 +520,24 @@ process_call_event(rb_trace_arg_t *trace_arg)
     self = rb_obj_class(self);
   }
 
+
   if(self != defined_class) {
     explore_constant(self);
+
+    auto owner = self;
+    if(trace->method_kind == SINGLETON) {
+      owner = rb_singleton_class(self);
+    }
+
+    // Only change the method owner, if self does not implement the method themselves.
+    if(rb_funcall(owner, method_defined, 2, method_id, Qfalse) == Qfalse)  {
+      // method_defined? documentation: "Public and protected methods are matched"
+      // so we need to check for private methods seperately
+      if(rb_funcall(owner, private_method_defined, 2, method_id, Qfalse) == Qfalse)  {
+        trace->method_callee = class_to_constant_instance(self);
+      }
+    }
+
   }
 
   trace->method_owner = class_to_constant_instance(defined_class);
