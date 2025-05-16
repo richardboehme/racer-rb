@@ -446,7 +446,7 @@ module Racer::Collectors
 
       if has_boolean
         constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
-        constants.push(Racer::Trace::Constant.new(name: "bool", anonymous: false, type: :class))
+        constants.push(Racer::Trace::ConstantInstance.new(name: "bool", singleton: false, generic_arguments: []))
       end
 
       if constants.size > 1
@@ -454,7 +454,6 @@ module Racer::Collectors
       end
 
       constant = constants.first
-      constant.ensure_valid_name!
 
       case constant.name
       when "bool"
@@ -462,6 +461,7 @@ module Racer::Collectors
       when "NilClass"
         RBS::Types::Bases::Nil.new(location: nil)
       else
+        constant.ensure_valid_name!
         type_name = to_type_name(constant.name)
 
         if constant.singleton
