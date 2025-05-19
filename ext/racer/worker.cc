@@ -67,7 +67,7 @@ int size_of_constant_instance(ConstantInstance& instance) {
 int size_of_block_trace(ReturnTrace*);
 
 int size_of_params(ReturnTrace* trace) {
-  auto size = 1 + trace->params_size * 3;
+  auto size = 2 + trace->params_size * 3;
 
   if(trace->block_param.has_value()) {
     size += 2;
@@ -104,6 +104,8 @@ void write_params(json_object* json_array, ReturnTrace* trace) {
     json_object_array_add(json_array, json_object_new_int(param.param_type));
     write_constant_instance(json_array, param.type_name);
   }
+
+  json_object_array_add(json_array, json_object_new_boolean(trace->block_param.has_value()));
 
   if(trace->block_param.has_value()) {
     auto block_param = *(trace->block_param);

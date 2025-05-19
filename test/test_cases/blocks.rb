@@ -34,6 +34,8 @@ foo do |a, b = 1, kw:, kw2: nil, &block|
   end
 end
 
+foo {}
+
 # self type should be a singleton of Foo
 Foo.foo do
 end
@@ -540,6 +542,86 @@ __END__
             name: Object
             singleton: false
             generic_arguments: []
+      self_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: Object
+        singleton: false
+        generic_arguments: []
+  constant_updates: []
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
+    name: Object
+    singleton: false
+    generic_arguments: []
+  method_callee:
+  method_name: bar
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
+    name: NilClass
+    singleton: false
+    generic_arguments: []
+  params: []
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name: block
+    traces:
+    - !ruby/object:Racer::Trace::BlockTrace
+      return_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: NilClass
+        singleton: false
+        generic_arguments: []
+      params: []
+      block_param:
+      self_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: Object
+        singleton: false
+        generic_arguments: []
+  constant_updates: []
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
+    name: Object
+    singleton: false
+    generic_arguments: []
+  method_callee:
+  method_name: foo
+  method_kind: :instance
+  method_visibility: :private
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
+    name: NilClass
+    singleton: false
+    generic_arguments: []
+  params: []
+  block_param: !ruby/object:Racer::Trace::BlockParam
+    name: block
+    traces:
+    - !ruby/object:Racer::Trace::BlockTrace
+      return_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: NilClass
+        singleton: false
+        generic_arguments: []
+      params: []
+      block_param:
+      self_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: Object
+        singleton: false
+        generic_arguments: []
+    - !ruby/object:Racer::Trace::BlockTrace
+      return_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: NilClass
+        singleton: false
+        generic_arguments: []
+      params: []
+      block_param:
+      self_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: Object
+        singleton: false
+        generic_arguments: []
+    - !ruby/object:Racer::Trace::BlockTrace
+      return_type: !ruby/object:Racer::Trace::ConstantInstance
+        name: NilClass
+        singleton: false
+        generic_arguments: []
+      params: []
+      block_param:
       self_type: !ruby/object:Racer::Trace::ConstantInstance
         name: Object
         singleton: false

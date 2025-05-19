@@ -60,7 +60,7 @@ class Racer::Agent
         # TODO: Is this an error? I would expect it waits until there is something to read?
         next if received_message.nil?
 
-        File.write("messages", "#{received_message}\n\n", mode: "a+")
+        # File.write("messages", "#{received_message}\n\n", mode: "a+")
 
         *messages, last_message = received_message.split("\0")
 
@@ -90,7 +90,7 @@ class Racer::Agent
           end
 
           data = JSON.parse(data)
-          # File.write("messages", "#{data}\n\n", mode: "a+")
+          File.write("messages", "#{data}\n\n", mode: "a+")
 
           method_name = data.shift
           method_kind =
@@ -154,8 +154,9 @@ class Racer::Agent
     params_size = data.shift
     params = params_size.times.map { shift_param(data) }
 
+    block_present = data.shift
     block_param =
-      unless data.empty?
+      if block_present
         block_name = data.shift
         traces_count = data.shift
         traces = traces_count.times.map { shift_block_trace(data) }
