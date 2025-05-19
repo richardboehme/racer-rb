@@ -255,6 +255,18 @@ class RBSCollectorTest < Minitest::Test
         block_param: to_block_param(traces: [])
       ),
       trace(
+        name: :foo,
+        block_param: to_block_param(traces: [{ params: [], return_type: String }])
+      ),
+      trace(
+        name: :foo,
+        block_param: to_block_param(traces: [{ params: [], return_type: Integer }])
+      ),
+      trace(
+        name: :foo,
+        block_param: to_block_param(traces: [{ params: [{ name: :a, klass: String, type: :required }], return_type: Integer }])
+      ),
+      trace(
         name: :bar,
         block_param: to_block_param(traces: [{ self_type: to_constant_instance(A::B::C::F, singleton: true) }]),
         constant_updates: [A::B::C::F]

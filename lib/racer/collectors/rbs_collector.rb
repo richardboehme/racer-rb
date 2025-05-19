@@ -278,8 +278,14 @@ module Racer::Collectors
       overloads = {}
 
       traces.map do |trace|
-        overloads[trace.params] ||= []
-        overloads[trace.params] << trace
+        key = [trace.params]
+        if trace.block_param
+          params = trace.block_param.traces.first&.params || []
+          key << params.map { [it.name, it.type] }
+        end
+
+        overloads[key] ||= []
+        overloads[key] << trace
       end
 
       return_type =
@@ -290,8 +296,19 @@ module Racer::Collectors
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
-        overloads: overloads.map do |params, traces|
+        overloads: overloads.map do |(params, *), traces|
           block_params = traces.filter_map(&:block_param)
+
+          unless block_params.empty?
+            block_traces = block_params.flat_map(&:traces)
+            param_sets = block_traces.map(&:params)
+            unless param_sets.empty?
+              size = param_sets.first.size
+              if param_sets.any? { it.size != size }
+                warn "block params different for #{traces}"
+              end
+            end
+          end
 
           RBS::AST::Members::MethodDefinition::Overload.new(
             method_type: RBS::MethodType.new(
@@ -318,11 +335,6 @@ module Racer::Collectors
     end
 
     def method_parameters(*param_sets)
-      size = param_sets.first.size
-      if param_sets.any? { it.size != size }
-        warn "Received param sets with different sizes"
-      end
-
       {
         required_positionals: [],
         optional_positionals: [],
@@ -332,6 +344,12 @@ module Racer::Collectors
         optional_keywords: {},
         rest_keywords: nil
       }.tap do |parameters|
+        size = param_sets.first.size
+        if param_sets.any? { it.size != size }
+          warn "Received param sets with different sizes #{param_sets}"
+          next
+        end
+
         size.times do |n|
           # TODO-Racer: Rethink the data structure here...
           type = param_sets.first[n].type
