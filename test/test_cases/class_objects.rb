@@ -8,15 +8,17 @@ class Foo
   end
 end
 
-class Bar
+module Bar
+end
+
+class Baz
 end
 
 Racer.start
 
-# Do not report Class constants as anonymous
 Foo.foo(Foo)
-Foo.foo([Foo])
-Foo.foo({ Foo => Foo })
+Foo.foo([Foo, Baz])
+Foo.foo({ Foo => Foo, Baz => Baz })
 Foo.foo(Bar)
 
 Foo.foo(Foo) { |a| a }
@@ -37,15 +39,15 @@ __END__
   method_kind: :singleton
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::ConstantInstance
-    name: Class
-    singleton: false
+    name: Foo
+    singleton: true
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
     type_name: !ruby/object:Racer::Trace::ConstantInstance
-      name: Class
-      singleton: false
+      name: Foo
+      singleton: true
       generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -57,22 +59,6 @@ __END__
     anonymous: false
     type: :class
     superclass:
-    included_modules: []
-    prepended_modules: []
-    extended_modules: []
-  - !ruby/object:Racer::Trace::Constant
-    name: Module
-    anonymous: false
-    type: :class
-    superclass:
-    included_modules: []
-    prepended_modules: []
-    extended_modules: []
-  - !ruby/object:Racer::Trace::Constant
-    name: Class
-    anonymous: false
-    type: :class
-    superclass: Module
     included_modules: []
     prepended_modules: []
     extended_modules: []
@@ -90,8 +76,12 @@ __END__
     singleton: false
     generic_arguments:
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::ConstantInstance
+        name: Baz
+        singleton: true
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
@@ -101,14 +91,26 @@ __END__
       singleton: false
       generic_arguments:
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
+          generic_arguments: []
+        - !ruby/object:Racer::Trace::ConstantInstance
+          name: Baz
+          singleton: true
           generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
     name: block
     traces: []
   constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Baz
+    anonymous: false
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
   - !ruby/object:Racer::Trace::Constant
     name: JSON
     anonymous: false
@@ -181,12 +183,20 @@ __END__
     singleton: false
     generic_arguments:
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::ConstantInstance
+        name: Baz
+        singleton: true
         generic_arguments: []
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
+        generic_arguments: []
+      - !ruby/object:Racer::Trace::ConstantInstance
+        name: Baz
+        singleton: true
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
@@ -196,12 +206,20 @@ __END__
       singleton: false
       generic_arguments:
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
+          generic_arguments: []
+        - !ruby/object:Racer::Trace::ConstantInstance
+          name: Baz
+          singleton: true
           generic_arguments: []
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
+          generic_arguments: []
+        - !ruby/object:Racer::Trace::ConstantInstance
+          name: Baz
+          singleton: true
           generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -236,21 +254,29 @@ __END__
   method_kind: :singleton
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::ConstantInstance
-    name: Class
-    singleton: false
+    name: Bar
+    singleton: true
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
     type_name: !ruby/object:Racer::Trace::ConstantInstance
-      name: Class
-      singleton: false
+      name: Bar
+      singleton: true
       generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
     name: block
     traces: []
-  constant_updates: []
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Bar
+    anonymous: false
+    type: :module
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
     name: Foo
@@ -261,15 +287,15 @@ __END__
   method_kind: :singleton
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::ConstantInstance
-    name: Class
-    singleton: false
+    name: Foo
+    singleton: true
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
     type_name: !ruby/object:Racer::Trace::ConstantInstance
-      name: Class
-      singleton: false
+      name: Foo
+      singleton: true
       generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -277,15 +303,15 @@ __END__
     traces:
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
         generic_arguments: []
       params:
       - !ruby/object:Racer::Trace::Param
         name: :a
         type_name: !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
           generic_arguments: []
         type: :optional
       block_param:
@@ -359,8 +385,8 @@ __END__
     singleton: false
     generic_arguments:
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
@@ -370,8 +396,8 @@ __END__
       singleton: false
       generic_arguments:
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
           generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -383,8 +409,8 @@ __END__
         singleton: false
         generic_arguments:
         - - !ruby/object:Racer::Trace::ConstantInstance
-            name: Class
-            singleton: false
+            name: Foo
+            singleton: true
             generic_arguments: []
       params:
       - !ruby/object:Racer::Trace::Param
@@ -394,8 +420,8 @@ __END__
           singleton: false
           generic_arguments:
           - - !ruby/object:Racer::Trace::ConstantInstance
-              name: Class
-              singleton: false
+              name: Foo
+              singleton: true
               generic_arguments: []
         type: :optional
       block_param:
@@ -418,12 +444,12 @@ __END__
     singleton: false
     generic_arguments:
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
         generic_arguments: []
     - - !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Foo
+        singleton: true
         generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
@@ -433,12 +459,12 @@ __END__
       singleton: false
       generic_arguments:
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
           generic_arguments: []
       - - !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Foo
+          singleton: true
           generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -450,12 +476,12 @@ __END__
         singleton: false
         generic_arguments:
         - - !ruby/object:Racer::Trace::ConstantInstance
-            name: Class
-            singleton: false
+            name: Foo
+            singleton: true
             generic_arguments: []
         - - !ruby/object:Racer::Trace::ConstantInstance
-            name: Class
-            singleton: false
+            name: Foo
+            singleton: true
             generic_arguments: []
       params:
       - !ruby/object:Racer::Trace::Param
@@ -465,12 +491,12 @@ __END__
           singleton: false
           generic_arguments:
           - - !ruby/object:Racer::Trace::ConstantInstance
-              name: Class
-              singleton: false
+              name: Foo
+              singleton: true
               generic_arguments: []
           - - !ruby/object:Racer::Trace::ConstantInstance
-              name: Class
-              singleton: false
+              name: Foo
+              singleton: true
               generic_arguments: []
         type: :optional
       block_param:
@@ -489,15 +515,15 @@ __END__
   method_kind: :singleton
   method_visibility: :public
   return_type: !ruby/object:Racer::Trace::ConstantInstance
-    name: Class
-    singleton: false
+    name: Bar
+    singleton: true
     generic_arguments: []
   params:
   - !ruby/object:Racer::Trace::Param
     name: :a
     type_name: !ruby/object:Racer::Trace::ConstantInstance
-      name: Class
-      singleton: false
+      name: Bar
+      singleton: true
       generic_arguments: []
     type: :required
   block_param: !ruby/object:Racer::Trace::BlockParam
@@ -505,15 +531,15 @@ __END__
     traces:
     - !ruby/object:Racer::Trace::BlockTrace
       return_type: !ruby/object:Racer::Trace::ConstantInstance
-        name: Class
-        singleton: false
+        name: Bar
+        singleton: true
         generic_arguments: []
       params:
       - !ruby/object:Racer::Trace::Param
         name: :a
         type_name: !ruby/object:Racer::Trace::ConstantInstance
-          name: Class
-          singleton: false
+          name: Bar
+          singleton: true
           generic_arguments: []
         type: :optional
       block_param:

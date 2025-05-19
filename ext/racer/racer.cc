@@ -204,6 +204,9 @@ class_to_constant_instance(VALUE klass, unsigned char generic_argument_count = 0
   return { constant->name, generic_argument_count, generic_arguments };
 }
 
+static ConstantInstance
+value_to_constant_instance(VALUE value, int depth);
+
 static int
 hash_to_keys_and_values(VALUE key, VALUE value, VALUE ary) {
   rb_ary_push(ary, key);
@@ -226,15 +229,15 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
       for(auto j = 0; j < rb_array_len(value); ++j) {
         auto item = ary_ptr[j];
 
+        auto constant = value_to_constant_instance(item, depth + 1);
         auto klass = rb_obj_class(item);
-        auto generic_arguments = generic_arguments_by_value(item, klass, depth + 1);
-        if(generic_arguments.first == 0) {
+        if(constant.generic_argument_count == 0 && !constant.singleton) {
           auto result = types.insert(klass);
           if(result.second) {
-            types_vec.push_back(class_to_constant_instance(klass));
+            types_vec.push_back(constant);
           }
         } else {
-          types_vec.push_back(class_to_constant_instance(klass, generic_arguments.first, generic_arguments.second));
+          types_vec.push_back(constant);
         }
       }
 
@@ -261,28 +264,28 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
       // This is O(2n) and thus could be pretty slow
       for(auto j = 0; j < hash_size; ++j) {
         auto key = ary_ptr[j * 2];
+        auto key_constant = value_to_constant_instance(key, depth + 1);
         auto key_type = rb_obj_class(key);
-        auto key_generics = generic_arguments_by_value(key, key_type, depth + 1);
-        if(key_generics.first == 0) {
+        if(key_constant.generic_argument_count == 0 && !key_constant.singleton) {
           auto key_result = key_types.insert(key_type);
           if(key_result.second) {
-            key_vec.push_back(class_to_constant_instance(key_type));
+            key_vec.push_back(key_constant);
           }
         } else {
-          key_vec.push_back(class_to_constant_instance(key_type, key_generics.first, key_generics.second));
+          key_vec.push_back(key_constant);
         }
 
 
         auto value = ary_ptr[j * 2 + 1];
+        auto value_constant = value_to_constant_instance(value, depth + 1);
         auto value_type = rb_obj_class(value);
-        auto value_generics = generic_arguments_by_value(value, value_type, depth + 1);
-        if(value_generics.first == 0) {
+        if(value_constant.generic_argument_count == 0 && !value_constant.singleton) {
           auto value_result = value_types.insert(value_type);
           if(value_result.second) {
-            value_vec.push_back(class_to_constant_instance(value_type));
+            value_vec.push_back(value_constant);
           }
         } else {
-          value_vec.push_back(class_to_constant_instance(value_type, value_generics.first, value_generics.second));
+          value_vec.push_back(value_constant);
         }
       }
 
@@ -297,6 +300,23 @@ generic_arguments_by_value(VALUE value, VALUE klass, int depth = 0) {
   return { 0, nullptr };
 }
 
+static ConstantInstance
+value_to_constant_instance(VALUE value, int generic_depth = 0) {
+  auto klass = rb_obj_class(value);
+  auto singleton = false;
+
+  if(klass == rb_cClass || klass == rb_cModule) {
+    klass = value;
+    singleton = true;
+  }
+
+  auto generics = generic_arguments_by_value(value, klass, generic_depth);
+
+  auto constant = class_to_constant_instance(klass, generics.first, generics.second);
+  constant.singleton = singleton;
+
+  return constant;
+}
 
 static bool
 process_event_check_path(VALUE path)
@@ -420,21 +440,16 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
         continue;
       }
 
-      unsigned char generic_argument_size = 0;
-      std::vector<ConstantInstance>* generic_arguments = nullptr;
+      ConstantInstance constant;
 
       if(param_name_id == anonRest) {
-        param_class = rb_cArray;
+        constant = class_to_constant_instance(rb_cArray);
       } else
       if(param_name_id == anonKeyrest) {
-        param_class = rb_cHash;
+        constant = class_to_constant_instance(rb_cHash);
       } else {
         VALUE value = rb_funcall(binding, rb_intern("local_variable_get"), 1, name);
-        param_class = rb_obj_class(value);
-
-        auto generics = generic_arguments_by_value(value, param_class);
-        generic_argument_size = generics.first;
-        generic_arguments = generics.second;
+        constant = value_to_constant_instance(value);
       }
 
       ParamType type;
@@ -460,7 +475,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
         continue;
       }
 
-      trace->params[trace->params_size] = { param_name, class_to_constant_instance(param_class, generic_argument_size, generic_arguments), type };
+      trace->params[trace->params_size] = { param_name, constant, type };
       trace->params_size++;
     } else {
       if(param_type == nokeyParam) {
@@ -625,9 +640,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   //fprintf(stderr, "[%ld] popped method %s#%s\n", fiber_id, trace->method_owner_name, trace->method_name);
 
   auto return_value = rb_tracearg_return_value(trace_arg);
-  auto return_value_class = rb_obj_class(return_value);
-  auto generics = generic_arguments_by_value(return_value, return_value_class);
-  trace->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
+  trace->return_type = value_to_constant_instance(return_value);
 
   if(trace->block_param.has_value()) {
     VALUE tracepoint_id = trace->block_param.value().tracepoint_id;
@@ -697,16 +710,7 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
     assign_parameters(trace, trace_arg);
 
     auto self = rb_tracearg_self(trace_arg);
-    auto self_type = rb_type(self);
-    if(self_type == T_CLASS || self_type == T_MODULE) {
-      auto constant_instance = class_to_constant_instance(self);
-      constant_instance.singleton = true;
-      trace->block_self_type = constant_instance;
-    } else {
-      auto self_class = rb_obj_class(self);
-      auto generics = generic_arguments_by_value(self, self_class);
-      trace->block_self_type = class_to_constant_instance(self_class, generics.first, generics.second);
-    }
+    trace->block_self_type = value_to_constant_instance(self);
   }
 
   block_param.current_block_call_stack.push_back(trace);
@@ -740,9 +744,7 @@ process_block_return_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   }
 
   auto return_value = rb_tracearg_return_value(trace_arg);
-  auto return_value_class = rb_obj_class(return_value);
-  auto generics = generic_arguments_by_value(return_value, return_value_class);
-  last_block_call->return_type = class_to_constant_instance(return_value_class, generics.first, generics.second);
+  last_block_call->return_type = value_to_constant_instance(return_value);
   block_param.block_traces.push_back(last_block_call);
 }
 
