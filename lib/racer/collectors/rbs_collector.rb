@@ -248,21 +248,10 @@ module Racer::Collectors
         singleton_methods.map do |name, overloads|
           to_method_definition(name, :singleton, overloads)
         end
-      )
+      ).compact
     end
 
     def to_method_definition(name, kind, traces)
-      # It could totally be that a method was public when called the first time and private
-      # the next time. We cannot depict such a case using RBS.
-      visibility = traces.last.method_visibility
-
-      overloads = {}
-
-      traces.map do |trace|
-        overloads[trace.params] ||= []
-        overloads[trace.params] << trace
-      end
-
       existing_type = @existing_types[traces.first.method_owner.name]
       overloading =
         if existing_type
@@ -276,6 +265,22 @@ module Racer::Collectors
 
           methods.key?(name.to_sym)
         end
+
+      # This is not ideal as we miss redefined core methods (for example if redefining Integer#+).
+      # Howver in most cases this does not happend and we instead want to keep the original type definition to have more
+      # correct signatures (for example Object#tap returns self instead of a chain of union types).
+      return if overloading
+
+      # It could totally be that a method was public when called the first time and private
+      # the next time. We cannot depict such a case using RBS.
+      visibility = traces.last.method_visibility
+
+      overloads = {}
+
+      traces.map do |trace|
+        overloads[trace.params] ||= []
+        overloads[trace.params] << trace
+      end
 
       return_type =
         if name == "initialize"
@@ -302,7 +307,7 @@ module Racer::Collectors
           )
         end,
         annotations: [],
-        overloading: !!overloading,
+        overloading: false,
         location: nil,
         comment: nil,
         # We do not use visibility sections so declare all methods that are not private
