@@ -328,14 +328,18 @@ value_to_constant_instance(VALUE value, int generic_depth = 0) {
   auto klass = rb_obj_class(value);
   auto singleton = false;
 
+  unsigned char generic_argument_count = 0;
+  std::vector<ConstantInstance>* generic_arguments = {};
   if(klass == rb_cClass || klass == rb_cModule) {
     klass = value;
     singleton = true;
+  } else {
+    auto generics = generic_arguments_by_value(value, klass, generic_depth);
+    generic_argument_count = generics.first;
+    generic_arguments = generics.second;
   }
 
-  auto generics = generic_arguments_by_value(value, klass, generic_depth);
-
-  auto constant = class_to_constant_instance(klass, generics.first, generics.second);
+  auto constant = class_to_constant_instance(klass, generic_argument_count, generic_arguments);
   constant.singleton = singleton;
 
   return constant;
