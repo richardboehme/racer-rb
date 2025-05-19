@@ -47,6 +47,29 @@ class_type_by_constant(VALUE constant) {
   }
 }
 
+static std::shared_ptr<Constant>
+explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constants);
+
+static VALUE explore_constant_namespace(VALUE constant_name) {
+  auto current_space = rb_cObject;
+  auto class_name_str = strdup(StringValueCStr(constant_name));
+  long constant_path_size = 0;
+  char* occurence = nullptr;
+  do {
+    occurence = strstr(class_name_str, "::");
+
+    if(!occurence) break;
+
+    occurence[0] = '\0';
+    current_space = rb_const_get_at(current_space, rb_intern(class_name_str));
+
+    explore_constant(current_space, nullptr);
+
+    class_name_str = occurence + 2;
+  } while(occurence != nullptr);
+
+  return current_space;
+}
 
 static std::shared_ptr<Constant>
 explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constants = nullptr) {
@@ -87,21 +110,21 @@ explore_constant(VALUE ruby_constant, std::unordered_set<VALUE> *visited_constan
 
   if(!anonymous) {
     // Explore namespace
-    auto current_space = rb_cObject;
-    auto class_name_str = strdup(StringValueCStr(ruby_constant_name));
-    long constant_path_size = 0;
-    char* occurence = nullptr;
-    do {
-      occurence = strstr(class_name_str, "::");
+    auto result = ::rb_rescue2(explore_constant_namespace, ruby_constant_name, nullptr, 0, rb_eNameError, (VALUE) 0);
+    // If explore_constant_namespace raises the namespace includes an anonymous class.
+    // We cannot determine a good name for this so we just use Class/Module with the object id.
+    if(RB_NIL_P(result)) {
+      constant->anonymous = true;
+      VALUE constant_name;
+      if(constant_type == CLASS) {
+        constant_name = rb_str_new_cstr("Class");
+      } else {
+        constant_name = rb_str_new_cstr("Module");
+      }
+      constant_name = rb_str_append(constant_name, rb_fix2str(INT2FIX(ruby_constant), 10));
 
-      if(!occurence) break;
-
-      occurence[0] = '\0';
-      current_space = rb_const_get_at(current_space, rb_intern(class_name_str));
-      explore_constant(current_space);
-
-      class_name_str = occurence + 2;
-    } while(occurence != nullptr);
+      constant->name = strdup(StringValueCStr(constant_name));
+    }
   }
 
   auto ancestors = rb_mod_ancestors(ruby_constant);
@@ -428,7 +451,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
             rb_hash_aset(hash, rb_id2sym(rb_intern("tp")), tp);
             rb_hash_aset(hash, rb_id2sym(rb_intern("target")), block);
             auto result = ::rb_rescue2(set_tracepoint_target_which_may_raise, hash, nullptr, 0, rb_eArgError, (VALUE) 0);
-            if(result) {
+            if(!RB_NIL_P(result)) {
               block_param.tracepoint_id = tp;
             }
           }

@@ -8,17 +8,23 @@ a = Class.new(Foo) do
   end
 end
 
+class a::Foobar
+  def foobar
+  end
+end
+
 Racer.start
 
 a.new.bar
 a.new.foo
+a::Foobar.new.foobar
 
 Racer.stop
 __END__
 ---
 - !ruby/object:Racer::Trace
   method_owner: !ruby/object:Racer::Trace::ConstantInstance
-    name: Foo127765448263760
+    name: Foo137904570434520
     singleton: false
     generic_arguments: []
   method_callee:
@@ -41,7 +47,7 @@ __END__
     prepended_modules: []
     extended_modules: []
   - !ruby/object:Racer::Trace::Constant
-    name: Foo127765448263760
+    name: Foo137904570434520
     anonymous: true
     type: :class
     superclass: Foo
@@ -103,7 +109,7 @@ __END__
     singleton: false
     generic_arguments: []
   method_callee: !ruby/object:Racer::Trace::ConstantInstance
-    name: Foo127765448263760
+    name: Foo137904570434520
     singleton: false
     generic_arguments: []
   method_name: foo
@@ -116,3 +122,27 @@ __END__
   params: []
   block_param:
   constant_updates: []
+- !ruby/object:Racer::Trace
+  method_owner: !ruby/object:Racer::Trace::ConstantInstance
+    name: Class137904570434200
+    singleton: false
+    generic_arguments: []
+  method_callee:
+  method_name: foobar
+  method_kind: :instance
+  method_visibility: :public
+  return_type: !ruby/object:Racer::Trace::ConstantInstance
+    name: NilClass
+    singleton: false
+    generic_arguments: []
+  params: []
+  block_param:
+  constant_updates:
+  - !ruby/object:Racer::Trace::Constant
+    name: Class137904570434200
+    anonymous: true
+    type: :class
+    superclass:
+    included_modules: []
+    prepended_modules: []
+    extended_modules: []
