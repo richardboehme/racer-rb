@@ -3,13 +3,15 @@ require "racer/trace"
 require "racer/collectors/rbs_collector"
 require "racer/agent"
 
+require "racer/rails/railtie" if defined?(Rails::Railtie)
+
 require "drb"
 require "drb/unix" unless Gem.win_platform?
 
 module Racer
   SERVER_PATH = "/tmp/racer.sock"
 
-  def self.start_agent(collectors: [Racer::Collectors::RBSCollector.new])
+  def self.start_agent(collectors: [Racer::Collectors::RBSCollector.new], stop_at_exit: true)
     pid = fork(&Racer::Agent.new(SERVER_PATH, collectors).method(:start))
 
     until File.exist?(SERVER_PATH)
@@ -18,7 +20,9 @@ module Racer
 
     at_exit do
       flush
-      stop_agent(pid)
+      if stop_at_exit
+        stop_agent(pid)
+      end
     end
 
     pid

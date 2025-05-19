@@ -1,5 +1,4 @@
 require "json"
-require "vernier"
 
 class Racer::Agent
   def initialize(server_path, collectors)
@@ -7,7 +6,8 @@ class Racer::Agent
     @server_path = server_path
     @server = nil
     @collectors = collectors
-    @current_connection = nil
+    @should_stop = false
+    @active_connections = []
   end
 
   def start
@@ -28,13 +28,14 @@ class Racer::Agent
         @collectors.each do |collector|
           collector.stop
         end
-        puts "Stopped collecting"
       end
 
     trap "HUP" do
-      unless @current_connection
+      puts "Shutting down agent... Waiting for #{@active_connections.size} connections to finish"
+      if @active_connections.empty?
         exit
       end
+      @should_stop = true
     end
 
     at_exit do
@@ -50,94 +51,104 @@ class Racer::Agent
   private
 
   def main_loop
+    loop do
+      @active_connections << (connection = @server.accept)
+      # this is not really good because new clients need to wait until first client finished but for now its okay
+      worker_loop(connection)
+
+      if @active_connections.size == 0 && @should_stop
+        return
+      end
+    end
+  end
+
+  def worker_loop(connection)
     pending_message = nil
     loop do
-      @current_connection = @server.accept
-      # this is not really good because new clients need to wait until first client finished but for now its okay
-      loop do
-        # TODO: Difference between connection.read connection.recv and connection.recvmsg
-        received_message = @current_connection.read(1024)
-        # TODO: Is this an error? I would expect it waits until there is something to read?
-        next if received_message.nil?
+      # TODO: Difference between connection.read connection.recv and connection.recvmsg
+      received_message = connection.read(1024)
+      # TODO: Is this an error? I would expect it waits until there is something to read?
+      if received_message.nil?
+        # warn "received nil as message"
+        next
+      end
 
-        # File.write("messages", "#{received_message}\n\n", mode: "a+")
+      File.write("messages", "#{received_message}\n\n", mode: "a+")
 
-        *messages, last_message = received_message.split("\0")
+      *messages, last_message = received_message.split("\0")
 
-        if pending_message
-          if messages.empty?
-            last_message = "#{pending_message}#{last_message}"
-          else
-            first_message = messages.shift
-            messages.prepend(*("#{pending_message}#{first_message}".split("\0")))
-          end
-
-          pending_message = nil
-        end
-
-        if received_message.end_with?("\0")
-          messages << last_message
+      if pending_message
+        if messages.empty?
+          last_message = "#{pending_message}#{last_message}"
         else
-          pending_message = last_message
+          first_message = messages.shift
+          messages.prepend(*("#{pending_message}#{first_message}".split("\0")))
         end
 
-        messages.each do |data|
-          if data == "stop"
-            puts "Received last message from worker"
-            @queue.close
-            @current_connection = nil
-            return
+        pending_message = nil
+      end
+
+      if received_message.end_with?("\0")
+        messages << last_message
+      else
+        pending_message = last_message
+      end
+
+      messages.each do |data|
+        if data == "stop"
+          puts "Received last message from one worker"
+          @active_connections.delete(connection)
+          return
+        end
+
+        data = JSON.parse(data)
+        # File.write("messages", "#{data}\n\n", mode: "a+")
+
+        method_name = data.shift
+        method_kind =
+          Racer::Trace::KINDS.fetch(data.shift) do |index|
+            warn "Unexpected method kind received #{index}"
+            Racer::Trace::KINDS.first
           end
 
-          data = JSON.parse(data)
-          File.write("messages", "#{data}\n\n", mode: "a+")
-
-          method_name = data.shift
-          method_kind =
-            Racer::Trace::KINDS.fetch(data.shift) do |index|
-              warn "Unexpected method kind received #{index}"
-              Racer::Trace::KINDS.first
-            end
-
-          method_visibility =
-            Racer::Trace::VISIBILITIES.fetch(data.shift) do |index|
-              warn "Unexpected method visibility received #{index}"
-              Racer::Trace::VISIBILITIES.first
-            end
-
-          return_type = shift_constant_instance(data)
-          method_owner = shift_constant_instance(data)
-          method_callee =
-            if data.first
-              shift_constant_instance(data)
-            else
-              # pop nil from data
-              data.shift
-            end
-
-          constant_updates = shift_constant_updates(data)
-
-          params, block_param = shift_params(data)
-
-
-          unless data.empty?
-            warn "Received more data then expected: #{data}"
+        method_visibility =
+          Racer::Trace::VISIBILITIES.fetch(data.shift) do |index|
+            warn "Unexpected method visibility received #{index}"
+            Racer::Trace::VISIBILITIES.first
           end
 
-          @queue.push(
-            Racer::Trace.new(
-              method_owner:,
-              method_callee:,
-              method_name:,
-              method_kind:,
-              method_visibility:,
-              return_type:,
-              params:,
-              block_param:,
-              constant_updates:
-            )
+        return_type = shift_constant_instance(data)
+        method_owner = shift_constant_instance(data)
+        method_callee =
+          if data.first
+            shift_constant_instance(data)
+          else
+            # pop nil from data
+            data.shift
+          end
+
+        constant_updates = shift_constant_updates(data)
+
+        params, block_param = shift_params(data)
+
+
+        unless data.empty?
+          warn "Received more data then expected: #{data}"
+        end
+
+        @queue.push(
+          Racer::Trace.new(
+            method_owner:,
+            method_callee:,
+            method_name:,
+            method_kind:,
+            method_visibility:,
+            return_type:,
+            params:,
+            block_param:,
+            constant_updates:
           )
-        end
+        )
       end
     end
   end

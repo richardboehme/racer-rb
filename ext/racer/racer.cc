@@ -348,6 +348,9 @@ value_to_constant_instance(VALUE value, int generic_depth = 0) {
 static bool
 process_event_check_path(VALUE path)
 {
+  // If the path is not a string we just assume that we should trace that
+  if(!RB_TYPE_P(path, T_STRING)) return true;
+
   auto range = RSTRING_LEN(path);
 
   struct reg_onig_search_args args = {
@@ -421,6 +424,8 @@ set_tracepoint_target_which_may_raise(VALUE hash) {
 static void
 assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
   VALUE parameters = rb_tracearg_parameters(trace_arg); // We may be able to cache this for each method? or access the parsed stuff idk
+  // auto param_inspect = rb_inspect(parameters);
+  // rb_warn("assiging parameters: %s", StringValueCStr(param_inspect));
   auto total_params_size = rb_array_len(parameters);
   trace->params_size = 0;
   // Array of parameters objects. The array might be larger than the number of parameters we emit.
@@ -435,7 +440,6 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
     VALUE name = rb_ary_entry(param, 1);
 
     ID param_type = rb_sym2id(rb_ary_entry(param, 0));
-
 
     if (RB_TEST(name))
     {
@@ -456,6 +460,7 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
             rb_hash_aset(hash, rb_id2sym(rb_intern("target")), block);
             auto result = ::rb_rescue2(set_tracepoint_target_which_may_raise, hash, nullptr, 0, rb_eArgError, (VALUE) 0);
             if(!RB_NIL_P(result)) {
+              // rb_warn("Starting to trace block calls for trace=%p block=%ld", trace, block);
               block_param.tracepoint_id = tp;
             }
           }
@@ -672,6 +677,7 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   if(trace->block_param.has_value()) {
     VALUE tracepoint_id = trace->block_param.value().tracepoint_id;
     if(tracepoint_id) {
+      // rb_warn("Disabling tracepoint for trace=%p", trace);
       rb_tracepoint_disable(tracepoint_id);
     }
   }
@@ -739,7 +745,7 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
     auto self = rb_tracearg_self(trace_arg);
     trace->block_self_type = value_to_constant_instance(self);
   }
-
+  // rb_warn("pushing trace %p to block call stack of %p", trace, last_trace);
   block_param.current_block_call_stack.push_back(trace);
 }
 
@@ -757,6 +763,7 @@ process_block_return_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   }
   auto last_block_call = block_param.current_block_call_stack.back();
   block_param.current_block_call_stack.pop_back();
+  // rb_warn("popped trace %p from block call stack of %p", last_block_call, last_trace);
 
   if(!last_block_call) {
     /*
@@ -879,10 +886,8 @@ static VALUE stop(VALUE self)
 
 static void flush_end(VALUE arg)
 {
-  if (flushed == 1 || socketFd <= 0)
+  if (socketFd <= 0)
     return;
-
-  flushed = 1;
 
   stop(arg);
   tpCall = Qnil;
@@ -895,11 +900,15 @@ static void flush_end(VALUE arg)
   tiny_queue_destroy(tiny_queue);
 
   const char* buffer = "stop";
-  if(send(socketFd, buffer, sizeof(buffer), 0) < 0) {
+  if(send(socketFd, buffer, strlen(buffer) + 1, 0) < 0) {
     perror("socket send flush");
   }
-
+  
+  if(shutdown(socketFd, SHUT_WR) < 0) {
+    perror("socket shutdown");
+  }
   close(socketFd);
+  socketFd = -1;
   fprintf(stdout, "flushed\n");
 }
 

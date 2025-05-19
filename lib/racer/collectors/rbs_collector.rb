@@ -296,8 +296,8 @@ module Racer::Collectors
       RBS::AST::Members::MethodDefinition.new(
         name: name.to_sym,
         kind:,
-        overloads: overloads.map do |(params, *), traces|
-          block_params = traces.filter_map(&:block_param)
+        overloads: overloads.map do |(params, *), overload_traces|
+          block_params = overload_traces.filter_map(&:block_param)
 
           unless block_params.empty?
             block_traces = block_params.flat_map(&:traces)
@@ -305,7 +305,7 @@ module Racer::Collectors
             unless param_sets.empty?
               size = param_sets.first.size
               if param_sets.any? { it.size != size }
-                warn "block params different for #{traces}"
+                warn "block params different for #{overload_traces}"
               end
             end
           end
@@ -315,7 +315,7 @@ module Racer::Collectors
               type_params: [],
               type: RBS::Types::Function.new(
                 **method_parameters(params),
-                return_type: return_type || to_rbs_type(*traces.map(&:return_type))
+                return_type: return_type || to_rbs_type(*overload_traces.map(&:return_type))
               ),
               block: block_params.empty? ? nil : to_block(block_params),
               location: nil
