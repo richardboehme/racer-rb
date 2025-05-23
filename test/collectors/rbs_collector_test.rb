@@ -300,7 +300,7 @@ class RBSCollectorTest < Minitest::Test
   end
 
   def test_invalid_constant_names
-     collector = Racer::Collectors::RBSCollector.new
+    collector = Racer::Collectors::RBSCollector.new
 
     [
       trace(
@@ -320,6 +320,18 @@ class RBSCollectorTest < Minitest::Test
         return_type: to_constant_instance("Array", generic_arguments: [["IO::Foo::invalid_constant"]])
       ),
       trace(name: :foo, return_type: to_constant_instance("IO::Bar::invalid"))
+    ].each { collector.collect(it) }
+
+    assert_rbs(__method__, collector)
+  end
+
+  def test_drop_invalid_method_names
+    collector = Racer::Collectors::RBSCollector.new
+
+    [
+      trace(
+        name: :"` test: foo bar`",
+      )
     ].each { collector.collect(it) }
 
     assert_rbs(__method__, collector)

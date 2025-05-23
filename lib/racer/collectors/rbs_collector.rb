@@ -41,6 +41,17 @@ module Racer::Collectors
     end
     using EnsureValidConstantName
 
+    module EnsureValidMethodName
+      refine Racer::Trace do
+        def valid_method_name?
+          method_name.match?(
+            /\A([a-zA-Z_][a-zA-Z0-9_]*[!?=]?|\+|\-|\*|\/|%|\*\*|==|!=|===|<=>|<=|>=|<|>|\<\<|\>\>|\&|\||\^|~|!|`|=~|!~|\[\]|\[\]=)\z/
+          )
+        end 
+      end
+    end
+    using EnsureValidMethodName
+
     def initialize
       @results = {}
       loader = RBS::EnvironmentLoader.new
@@ -57,6 +68,10 @@ module Racer::Collectors
         constant.ensure_valid_names!
 
         push_constant_to_results(constant)
+      end
+
+      unless trace.valid_method_name?
+        return
       end
 
       method_type_key =
