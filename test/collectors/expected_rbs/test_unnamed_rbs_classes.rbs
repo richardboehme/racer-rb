@@ -1,4 +1,4 @@
-class ::RBS::Unnamed::Random_Base
+class ::Random::Base
 end
 
 class ::Random < ::RBS::Unnamed::Random_Base

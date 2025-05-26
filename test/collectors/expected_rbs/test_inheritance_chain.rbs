@@ -52,5 +52,11 @@ class ::Object
   def each: () { (untyped) -> untyped } -> untyped
 end
 
+module ::Delegator1234
+end
+
+class ::Tempfile < ::File
+end
+
 class ::NilClass
 end

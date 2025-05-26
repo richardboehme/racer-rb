@@ -29,9 +29,9 @@ module Racer::Collectors
           @extended_modules = @extended_modules.map { EnsureValidConstantName.valid_name(it) }
         end
 
-        def set_alias!(alias_name)
-          @original_name = @name
-          @name = alias_name
+        def set_superclass_alias!(alias_name)
+          @original_superclass = @superclass
+          @superclass = alias_name
         end
       end
 
@@ -47,16 +47,20 @@ module Racer::Collectors
           method_name.match?(
             /\A([a-zA-Z_][a-zA-Z0-9_]*[!?=]?|\+|\-|\*|\/|%|\*\*|==|!=|===|<=>|<=|>=|<|>|\<\<|\>\>|\&|\||\^|~|!|`|=~|!~|\[\]|\[\]=)\z/
           )
-        end 
+        end
       end
     end
     using EnsureValidMethodName
 
-    def initialize
+    def initialize(libraries: [])
       @results = {}
+
       loader = RBS::EnvironmentLoader.new
+      libraries.each { loader.add(library: it) }
+
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
+
       @existing_types = {}
       # Modules that are included or prepended to the Object class
       # need to have a self type that is not Object (for example BasicObject)
@@ -105,7 +109,7 @@ module Racer::Collectors
 
           case constant.type
           when :class
-            to_class_delaration(constant, instance_methods, singleton_methods)
+            to_class_declaration(constant, instance_methods, singleton_methods)
           when :module
             to_module_declaration(constant, instance_methods, singleton_methods)
           else
@@ -137,8 +141,13 @@ module Racer::Collectors
       if class_decl
         @existing_types[constant.name] = { class_decl:, type_name: }
 
-        if constant.superclass && @results.key?(constant.superclass) && constant.superclass != class_decl.primary.decl.super_class.name.to_s
-          @results[constant.superclass][:constant].set_alias!(class_decl.primary.decl.super_class.name.to_s.delete_prefix("::"))
+        if constant.superclass && @results.key?(constant.superclass) && class_decl.primary.decl.super_class && constant.superclass != class_decl.primary.decl.super_class.name.to_s
+          superclass_name = class_decl.primary.decl.super_class.name.to_s.delete_prefix("::")
+          # if @results.key?(superclass_name)
+            constant.set_superclass_alias!(superclass_name)
+          # else
+           #  @results[constant.superclass][:constant].set_alias!(superclass_name)
+          #end
         end
       end
 
@@ -174,14 +183,12 @@ module Racer::Collectors
       )
     end
 
-    def to_class_delaration(owner, instance_methods, singleton_methods)
+    def to_class_declaration(owner, instance_methods, singleton_methods)
       super_class =
-        if owner.superclass && @results.key?(owner.superclass)
-          constant = @results[owner.superclass][:constant]
-
+        if owner.superclass
           RBS::AST::Declarations::Class::Super.new(
-            name: to_type_name(constant.name),
-            args: generic_arguments_of_class(constant.name),
+            name: to_type_name(owner.superclass),
+            args: generic_arguments_of_class(owner.superclass),
             location: nil
           )
         end
@@ -266,25 +273,41 @@ module Racer::Collectors
       ).compact
     end
 
-    def to_method_definition(name, kind, traces)
-      existing_type = @existing_types[traces.first.method_owner.name]
-      overloading =
-        if existing_type
-          methods =
-            case kind
-            when :instance
-              existing_type[:instance] ||= @definition_builder.build_instance(existing_type[:type_name])
-            when :singleton
-              existing_type[:singleton] ||= @definition_builder.build_singleton(existing_type[:type_name])
-            end.methods
+    def method_defined?(method_name, method_kind, owner_name)
+      existing_type = @existing_types[owner_name]
 
-          methods.key?(name.to_sym)
-        end
+      if existing_type
+        methods =
+          case method_kind
+          when :instance
+            existing_type[:instance] ||= @definition_builder.build_instance(existing_type[:type_name])
+          when :singleton
+            existing_type[:singleton] ||= @definition_builder.build_singleton(existing_type[:type_name])
+          end.methods
+
+        methods.key?(method_name.to_sym)
+      else
+        false
+      end
+    end
+
+    def to_method_definition(name, kind, traces)
+      first_trace = traces.first
 
       # This is not ideal as we miss redefined core methods (for example if redefining Integer#+).
       # Howver in most cases this does not happend and we instead want to keep the original type definition to have more
       # correct signatures (for example Object#tap returns self instead of a chain of union types).
-      return if overloading
+      return if method_defined?(name, kind, first_trace.method_owner.name)
+
+      # We add methods to the method callee if present. In this case we still check if the callee
+      # defines this method already. As the callee is not equal to the owner, the method signature might
+      # have changed from the implemented method on the callee, so we overload in this case.
+      overloading =
+        if first_trace.method_callee
+          method_defined?(name, kind, first_trace.method_callee.name)
+        else
+          false
+        end
 
       # It could totally be that a method was public when called the first time and private
       # the next time. We cannot depict such a case using RBS.
@@ -339,7 +362,7 @@ module Racer::Collectors
           )
         end,
         annotations: [],
-        overloading: false,
+        overloading:,
         location: nil,
         comment: nil,
         # We do not use visibility sections so declare all methods that are not private

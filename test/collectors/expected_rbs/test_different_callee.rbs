@@ -4,3 +4,16 @@ end
 
 class ::RBSCollectorTest
 end
+
+module ::RBSCollectorTest::A
+end
+
+class ::Array[unchecked out Elem]
+  include ::RBSCollectorTest::A
+
+  def to_json: () -> nil
+             | ...
+end
+
+class ::NilClass
+end

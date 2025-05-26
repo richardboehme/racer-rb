@@ -10,8 +10,7 @@ require "rails" if defined?(Rails)
 require "racer"
 require_relative "minitest_plugin"
 
-pid = Racer.start_agent(stop_at_exit: false)
-puts "Agent started with pid #{pid}"
-Racer::MinitestPlugin.agent_pid = pid
+Racer::MinitestPlugin.agent_pid = Racer.start_agent(stop_at_exit: false, collectors: [Racer::Collectors::RBSCollector.new(libraries: ["json", "minitest", "tempfile", "base64", "pathname"])])
+puts "Agent started with pid #{Racer::MinitestPlugin.agent_pid}"
 
 Minitest.register_plugin Racer::MinitestPlugin

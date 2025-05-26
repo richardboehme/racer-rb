@@ -277,7 +277,7 @@ class RBSCollectorTest < Minitest::Test
   end
 
   def test_inheritance_chain
-    collector = Racer::Collectors::RBSCollector.new
+    collector = Racer::Collectors::RBSCollector.new(libraries: ["tempfile"])
 
     [
       trace(name: :foo, constant_updates: [
@@ -292,7 +292,10 @@ class RBSCollectorTest < Minitest::Test
         Array,
         Racer,
         to_constant(Racer::Agent, superclass: Array),
-        to_constant(Object, included_modules: [A, Enumerable])
+        to_constant(Object, included_modules: [A, Enumerable]),
+        "Delegator1234",
+        # Should use existing superclass if present (in this case File)
+        to_constant(Tempfile, superclass: "Delegator1234"),
       ])
     ].each { collector.collect(it) }
 
@@ -368,7 +371,7 @@ class RBSCollectorTest < Minitest::Test
   end
 
   def test_different_callee
-    collector = Racer::Collectors::RBSCollector.new
+    collector = Racer::Collectors::RBSCollector.new(libraries: ["json"])
 
     [
       trace(
@@ -379,6 +382,15 @@ class RBSCollectorTest < Minitest::Test
         params: [{ name: :a, klass: String, type: :required }],
         return_type: Integer,
         callee: A::B
+      ),
+      trace(
+        name: :to_json,
+        constant_updates: [
+          A,
+          to_constant(Array, included_modules: [A])
+        ],
+        owner: A,
+        callee: Array
       )
     ].each { collector.collect(it) }
 
