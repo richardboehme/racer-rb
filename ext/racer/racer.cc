@@ -460,7 +460,6 @@ assign_parameters(ReturnTrace* trace, rb_trace_arg_t* trace_arg) {
             rb_hash_aset(hash, rb_id2sym(rb_intern("target")), block);
             auto result = ::rb_rescue2(set_tracepoint_target_which_may_raise, hash, nullptr, 0, rb_eArgError, (VALUE) 0);
             if(!RB_NIL_P(result)) {
-              // rb_warn("Starting to trace block calls for trace=%p block=%ld", trace, block);
               block_param.tracepoint_id = tp;
             }
           }
@@ -677,7 +676,6 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   if(trace->block_param.has_value()) {
     VALUE tracepoint_id = trace->block_param.value().tracepoint_id;
     if(tracepoint_id) {
-      // rb_warn("Disabling tracepoint for trace=%p", trace);
       rb_tracepoint_disable(tracepoint_id);
     }
   }
@@ -732,6 +730,41 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   }
 
   auto& block_param = *(last_trace->block_param);
+  /*
+    We cannot correctly trace multiple block calls.
+
+    Why? Because ruby applies tracepoints recursively to all blocks defined inside our block. If those "inner"
+    blocks are being called outside of the block, we cannot detect if the block is the block we actually want to trace
+    or if it was a block defined inside the block we want to trace.
+
+    Example:
+
+      $foo = nil
+      def bar(&block)
+        $foo = block
+      end
+
+      def foo(&block)
+        block.call
+        $foo.call <--- we cannot differentiate this block call from calls to the block variable
+      end
+
+      $tp_call.enable(target: $block)
+      block =  ->(*args) {
+        bar do
+          puts "hi"
+        end
+      }
+      p foo(&block)
+
+    The only thing we can say for sure is that the first call to the block will be the one we actually want to trace.
+    For now we keep the possibility to maybe have multiple block traces. Maybe in the future we find a possibility to
+    trace multiple calls for the same block.
+  */
+  if(block_param.block_traces.size() > 0) {
+    return;
+  }
+
   ReturnTrace *trace = nullptr;
   if(block_param.current_block_call_stack.empty()) {
     trace = new ReturnTrace;
@@ -745,7 +778,6 @@ process_block_call_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
     auto self = rb_tracearg_self(trace_arg);
     trace->block_self_type = value_to_constant_instance(self);
   }
-  // rb_warn("pushing trace %p to block call stack of %p", trace, last_trace);
   block_param.current_block_call_stack.push_back(trace);
 }
 
@@ -757,13 +789,17 @@ process_block_return_event(rb_trace_arg_t* trace_arg, ReturnTrace* last_trace) {
   }
 
   auto &block_param = last_trace->block_param.value();
+  // See comment in process_block_call_event for more info on why we need to to restrict ourselves to one block trace
+  if(block_param.block_traces.size() > 0) {
+    return;
+  }
+
   if (block_param.current_block_call_stack.empty()) {
     rb_warn("Current block call stack for method %s is empty.", last_trace->method_name);
     return;
   }
   auto last_block_call = block_param.current_block_call_stack.back();
   block_param.current_block_call_stack.pop_back();
-  // rb_warn("popped trace %p from block call stack of %p", last_block_call, last_trace);
 
   if(!last_block_call) {
     /*
@@ -903,7 +939,7 @@ static void flush_end(VALUE arg)
   if(send(socketFd, buffer, strlen(buffer) + 1, 0) < 0) {
     perror("socket send flush");
   }
-  
+
   if(shutdown(socketFd, SHUT_WR) < 0) {
     perror("socket shutdown");
   }
