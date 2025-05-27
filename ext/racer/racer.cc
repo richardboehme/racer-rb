@@ -387,20 +387,24 @@ should_process_event(rb_trace_arg_t *trace_arg)
     return true;
   }
 
-  auto caller_locations = rb_funcall(rb_mKernel, callerLocationsId, 2, RB_INT2FIX(1), RB_INT2FIX(1));
-  auto caller_location_length = rb_array_len(caller_locations);
-  if(caller_location_length == 0) {
-    return true;
+  VALUE frames[] = { Qnil, Qnil };
+  // There is currently a bug in rb_profile_frames that
+  // causes the start argument to effectively always
+  // act as if it were 0, so we need to also get the top
+  // frame. (https://bugs.ruby-lang.org/issues/14607)
+  // This seems to have been fixed with Ruby 3.4
+  auto frames_found = rb_profile_frames(0, 2, frames, nullptr);
+  VALUE caller_path = rb_profile_frame_path(frames[1]);
+
+  if(caller_path == Qnil) {
+    return false;
   }
 
-  auto caller_location = rb_ary_entry(caller_locations, 0);
-  path = rb_funcall(caller_location, pathId, 0);
-  if(process_event_check_path(path)) {
+  if(process_event_check_path(caller_path)) {
     return true;
   }
 
   return false;
-
 }
 
 static void process_block_call_event(rb_trace_arg_t*, ReturnTrace*);
@@ -894,6 +898,7 @@ static VALUE start(VALUE self, VALUE arg_pathMatcher, VALUE arg_maxGenericDepth)
   worker_data->queue = tiny_queue;
   worker_data->socket_fd = socketFd;
   pthread_create(&pthread, nullptr, init_worker, worker_data);
+  pthread_setname_np(pthread, "mworker");
 
   tpCall = rb_tracepoint_new(Qnil, RUBY_EVENT_CALL | RUBY_EVENT_RETURN | RUBY_EVENT_RESCUE, process_tracepoint, nullptr);
   rb_tracepoint_enable(tpCall);
