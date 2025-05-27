@@ -1,6 +1,3 @@
-class ::NilClass
-end
-
 class ::RBSCollectorTest
   def self.foo: () -> nil
 end

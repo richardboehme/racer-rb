@@ -4,9 +4,6 @@ class ::Integer
   def self.bar: () -> nil
 end
 
-class ::NilClass
-end
-
 class ::Hash[unchecked out K, unchecked out V]
   def foo: () -> nil
 end

@@ -19,9 +19,6 @@ end
 module ::RBSCollectorTest::A::B::C::E
 end
 
-class ::NilClass
-end
-
 class ::RBSCollectorTest
   def foo: () { (::String | ::RBSCollectorTest::A::B::C::E a, ?::Integer b) [self: ::String | ::Integer] -> (::RBSCollectorTest::A::B::C::D | ::String) } -> nil
          | () { () -> (::String | ::Integer) } -> nil

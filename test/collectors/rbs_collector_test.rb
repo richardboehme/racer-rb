@@ -452,10 +452,6 @@ class RBSCollectorTest < Minitest::Test
     block_param: nil,
     constant_updates: []
   )
-    if return_type == NilClass
-      constant_updates << NilClass
-    end
-
     if owner == RBSCollectorTest
       constant_updates << RBSCollectorTest
     end

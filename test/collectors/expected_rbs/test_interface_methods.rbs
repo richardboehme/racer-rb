@@ -26,9 +26,6 @@ class ::String
   include ::Comparable
 end
 
-class ::NilClass
-end
-
 class ::RBSCollectorTest
   def foo: () -> nil
 end
