@@ -5,8 +5,7 @@ require "racer/agent"
 
 require "racer/rails/railtie" if defined?(Rails::Railtie)
 
-require "drb"
-require "drb/unix" unless Gem.win_platform?
+require "socket"
 
 module Racer
   SERVER_PATH = "/tmp/racer.sock"

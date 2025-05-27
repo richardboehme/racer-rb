@@ -14,3 +14,5 @@ gem "rubocop", "~> 1.21"
 gem "difftastic"
 
 gem "irb"
+gem "benchmark"
+gem "profile-viewer"
