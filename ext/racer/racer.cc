@@ -32,6 +32,8 @@ static std::unordered_map<unsigned long, std::vector<ReturnTrace*>> call_stacks;
 static std::unordered_map<VALUE, std::shared_ptr<Constant>> constant_map = {};
 static std::vector<VALUE> constant_updates {};
 
+static std::unordered_map<VALUE, bool> matched_paths = {};
+
 static ClassType
 class_type_by_constant(VALUE constant) {
   auto type = rb_type(constant);
@@ -351,6 +353,12 @@ process_event_check_path(VALUE path)
   // If the path is not a string we just assume that we should trace that
   if(!RB_TYPE_P(path, T_STRING)) return true;
 
+  auto path_hash = ST2FIX(rb_str_hash(path));
+  auto matched_path = matched_paths.find(path_hash);
+  if(matched_path != matched_paths.end()) {
+    return (*matched_path).second;
+  }
+
   auto range = RSTRING_LEN(path);
 
   struct reg_onig_search_args args = {
@@ -358,11 +366,13 @@ process_event_check_path(VALUE path)
       .range = range,
   };
 
+  bool result = true;
   if(rb_reg_onig_match(pathMatcher, path, reg_onig_search, &args, NULL) == ONIG_MISMATCH) {
-    return false;
+    result = false;
   }
 
-  return true;
+  matched_paths.emplace(path_hash, result);
+  return result;
 }
 
 static bool
@@ -844,6 +854,10 @@ static VALUE start(VALUE self, VALUE arg_pathMatcher, VALUE arg_maxGenericDepth)
 {
   if(!RB_NIL_P(arg_pathMatcher)) {
     Check_Type(arg_pathMatcher, T_REGEXP);
+  }
+
+  if(rb_equal(pathMatcher, arg_pathMatcher) == Qfalse) {
+    matched_paths.clear();
   }
   pathMatcher = arg_pathMatcher;
 
