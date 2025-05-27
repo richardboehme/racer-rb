@@ -98,6 +98,10 @@ class Racer::Trace
       @name = name
       @traces = traces
     end
+
+    def ==(other)
+      name == other.name && traces == other.traces
+    end
   end
 
   class BlockTrace
@@ -108,6 +112,10 @@ class Racer::Trace
       @params = params
       @block_param = block_param
       @self_type = self_type
+    end
+
+    def ==(other)
+      return_type == other.return_type && params == other.params && block_param == other.block_param && self_type == other.self_type
     end
   end
 end
