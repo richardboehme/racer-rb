@@ -73,7 +73,7 @@ class Racer::Agent
         next
       end
 
-      File.write("messages", "#{received_message}\n\n", mode: "a+")
+      # File.write("messages", "#{received_message}\n\n", mode: "a+")
 
       *messages, last_message = received_message.split("\0")
 
@@ -102,7 +102,7 @@ class Racer::Agent
         end
 
         data = JSON.parse(data)
-        File.write("parsed_messages", "#{data}\n\n", mode: "a+")
+        # File.write("parsed_messages", "#{data}\n\n", mode: "a+")
 
         method_name = data.shift
         method_kind =

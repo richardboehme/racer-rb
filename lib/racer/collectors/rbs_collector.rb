@@ -24,9 +24,9 @@ module Racer::Collectors
           ensure_valid_name!
 
           @superclass = EnsureValidConstantName.valid_name(@superclass)
-          @included_modules = @included_modules.map { EnsureValidConstantName.valid_name(it) }
-          @prepended_modules = @prepended_modules.map { EnsureValidConstantName.valid_name(it) }
-          @extended_modules = @extended_modules.map { EnsureValidConstantName.valid_name(it) }
+          @included_modules = @included_modules.map { EnsureValidConstantName.valid_name(_1) }
+          @prepended_modules = @prepended_modules.map { EnsureValidConstantName.valid_name(_1) }
+          @extended_modules = @extended_modules.map { EnsureValidConstantName.valid_name(_1) }
         end
 
         def set_superclass_alias!(alias_name)
@@ -56,7 +56,7 @@ module Racer::Collectors
       @results = {}
 
       loader = RBS::EnvironmentLoader.new
-      libraries.each { loader.add(library: it) }
+      libraries.each { loader.add(library: _1) }
 
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
@@ -319,7 +319,7 @@ module Racer::Collectors
         key = [trace.params]
         if trace.block_param
           params = trace.block_param.traces.first&.params || []
-          key << params.map { [it.name, it.type] }
+          key << params.map { [_1.name, _1.type] }
         end
 
         overloads[key] ||= []
@@ -342,7 +342,7 @@ module Racer::Collectors
             param_sets = block_traces.map(&:params)
             unless param_sets.empty?
               size = param_sets.first.size
-              if param_sets.any? { it.size != size }
+              if param_sets.any? { _1.size != size }
                 warn "block params different for #{overload_traces}"
               end
             end
@@ -383,7 +383,7 @@ module Racer::Collectors
         rest_keywords: nil
       }.tap do |parameters|
         size = param_sets.first.size
-        if param_sets.any? { it.size != size }
+        if param_sets.any? { _1.size != size }
           warn "Received param sets with different sizes #{param_sets}"
           next
         end
@@ -392,7 +392,7 @@ module Racer::Collectors
           # TODO-Racer: Rethink the data structure here...
           type = param_sets.first[n].type
           name = param_sets.first[n].name
-          types = param_sets.map { it[n].type_name }
+          types = param_sets.map { _1[n].type_name }
           generic_arguments = types.first.generic_arguments
 
           case type
@@ -459,7 +459,7 @@ module Racer::Collectors
     # Note: RBS does not support blocks that get other blocks passed so we cannot document
     # "nested" block params.
     def to_block(block_params)
-      required = block_params.any? { !it.traces.empty? }
+      required = block_params.any? { !_1.traces.empty? }
 
       traces = block_params.flat_map(&:traces)
 
@@ -519,7 +519,7 @@ module Racer::Collectors
       end
 
       if has_boolean
-        constants.delete_if { it.name == "TrueClass" || it.name == "FalseClass" }
+        constants.delete_if { _1.name == "TrueClass" || _1.name == "FalseClass" }
         constants.push(Racer::Trace::ConstantInstance.new(name: "bool", singleton: false, generic_arguments: []))
       end
 
