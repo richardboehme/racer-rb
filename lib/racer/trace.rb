@@ -100,7 +100,7 @@ class Racer::Trace
     end
 
     def ==(other)
-      name == other.name && traces == other.traces
+      other.is_a?(BlockParam) && name == other.name && traces == other.traces
     end
   end
 
