@@ -331,7 +331,7 @@ value_to_constant_instance(VALUE value, int generic_depth = 0) {
   auto singleton = false;
 
   unsigned char generic_argument_count = 0;
-  std::vector<ConstantInstance>* generic_arguments = {};
+  std::vector<ConstantInstance>* generic_arguments = nullptr;
   if(klass == rb_cClass || klass == rb_cModule) {
     klass = value;
     singleton = true;
@@ -610,8 +610,7 @@ process_call_event(rb_trace_arg_t *trace_arg)
       // Attempt to detect retries of a method using the `retry` keyword
       if(previous_trace->rescued && strcmp(trace->method_name, previous_trace->method_name) == 0 && strcmp(trace->method_owner.name, previous_trace->method_owner.name) == 0) {
         //fprintf(stderr, "[%ld] detected retry of method %s\n", fiber_id, trace->method_name);
-        free(trace->method_name);
-        free(trace);
+        free_trace(trace);
         return;
       }
     }
@@ -919,19 +918,7 @@ static VALUE stop(VALUE self)
       stack.pop_back();
       if(!trace) continue;
 
-      // TODO: Implement free_trace or deconstructor? (free method owner)
-      if(trace->method_name) free(trace->method_name);
-      for(long i = 0; i < trace->params_size; ++i) {
-        auto param = trace->params[i];
-        // if(param.class_name) {
-        //   free(param.class_name);
-        // }
-        free(param.name);
-      }
-
-      assert(!trace->return_type);
-
-      free(trace);
+      free_trace(trace);
     }
   }
   call_stacks.clear();

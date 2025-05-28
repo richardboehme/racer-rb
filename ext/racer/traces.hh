@@ -44,13 +44,13 @@ typedef struct Constant {
 typedef struct ConstantInstance {
   char* name { nullptr };
   unsigned char generic_argument_count { 0 };
-  std::vector<ConstantInstance>* generic_arguments {};
+  std::vector<ConstantInstance>* generic_arguments { nullptr };
   bool singleton { false };
 } ConstantInstance;
 
 typedef struct Parameter {
   char* name { nullptr };
-  ConstantInstance type_name { 0 };
+  ConstantInstance type_name {};
   ParamType param_type { REQUIRED };
 } Parameter;
 
@@ -83,5 +83,13 @@ struct ReturnTrace
   // be even better if we could split those two types anyway
   std::optional<ConstantInstance> block_self_type {};
 };
+
+void free_constant_instance(ConstantInstance& instance);
+
+void free_param(Parameter& param);
+
+void free_block_param(BlockParameter& param);
+
+void free_trace(ReturnTrace* trace);
 
 #endif /* TRACES_H */

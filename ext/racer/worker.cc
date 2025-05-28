@@ -180,16 +180,7 @@ void *init_worker(void *arg)
 
     json_object_put(json_array);
 
-    free(trace->method_name);
-    // free(trace->return_type);
-    // for(long i = 0; i < trace->params_size; ++i) {
-    //   auto &param = trace->params[i];
-    //   if(param.class_name) {
-    //     free(param.class_name);
-    //   }
-    //   free(param.name);
-    // }
-    free(trace);
+    free_trace(trace);
     free(message);
   }
 
