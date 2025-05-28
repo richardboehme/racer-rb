@@ -24,7 +24,7 @@ module Racer
 
     config.before_initialize do
       if defined?(Racer::MinitestPlugin)
-        Racer.start(path_regex: %r(/app/), max_generic_depth: 3)
+        Racer.start(path_regex: %r(/app|test/), max_generic_depth: 3)
       end
     end
 
