@@ -1,9 +1,0 @@
-class ::Integer
-  def prime?: () -> nil
-
-  def self.bar: () -> nil
-end
-
-class ::Hash[unchecked out K, unchecked out V]
-  def foo: () -> nil
-end

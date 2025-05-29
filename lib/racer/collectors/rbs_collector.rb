@@ -1,4 +1,5 @@
 require "rbs"
+require "fileutils"
 
 module Racer::Collectors
   class RBSCollector
@@ -99,29 +100,52 @@ module Racer::Collectors
       @results[owner.name][method_type_key][trace.method_name] << trace
     end
 
-    def stop(path: "output.rbs")
-      io = File.open(path, "w")
-      writer = RBS::Writer.new(out: io)
+    def stop(path: "sig/generated")
+      FileUtils.rm_r(path) if File.directory?(path)
+      @results.each do |owner_name, owner|
 
-      declarations =
-        @results.map do |owner_name, owner|
-          owner => { constant:, instance_methods:, singleton_methods: }
+        owner => { constant:, instance_methods:, singleton_methods: }
 
-          case constant.type
-          when :class
-            to_class_declaration(constant, instance_methods, singleton_methods)
-          when :module
-            to_module_declaration(constant, instance_methods, singleton_methods)
-          else
-            puts "Unknown owner type #{type} (#{instance_methods}, #{singleton_methods})"
-          end
+        declarations =
+          [
+            case constant.type
+            when :class
+              to_class_declaration(constant, instance_methods, singleton_methods)
+            when :module
+              to_module_declaration(constant, instance_methods, singleton_methods)
+            else
+              puts "Unknown owner type #{type} (#{instance_methods}, #{singleton_methods})"
+            end
+          ].compact
+
+        # Skip writing for invalid owners and if the owner has no members and already exists as RBS
+        if declarations.empty? || (declarations.first.members.empty? && @existing_types.key?(owner_name))
+          next
         end
 
-      writer.write(declarations.compact)
-      io.close
+        filename = "#{path}/#{owner_name.split("::").map { underscore(_1) }.join("/")}.rbs"
+        dirname = File.dirname(filename)
+        unless File.directory?(dirname)
+          FileUtils.mkdir_p(dirname)
+        end
+
+        io = File.open(filename, "w")
+        writer = RBS::Writer.new(out: io)
+        writer.write(declarations)
+        io.close
+      end
     end
 
     private
+
+    def underscore(camel_cased_word)
+      return camel_cased_word.to_s.dup unless /[A-Z-]|::/.match?(camel_cased_word)
+      word = camel_cased_word.to_s.gsub("::", "/")
+      word.gsub!(/(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z\d])(?=[A-Z])/, "_")
+      word.tr!("-", "_")
+      word.downcase!
+      word
+    end
 
     def push_constant_to_results(constant)
       return if @results.key?(constant.name)
@@ -143,11 +167,7 @@ module Racer::Collectors
 
         if constant.superclass && @results.key?(constant.superclass) && class_decl.primary.decl.super_class && constant.superclass != class_decl.primary.decl.super_class.name.to_s
           superclass_name = class_decl.primary.decl.super_class.name.to_s.delete_prefix("::")
-          # if @results.key?(superclass_name)
-            constant.set_superclass_alias!(superclass_name)
-          # else
-           #  @results[constant.superclass][:constant].set_alias!(superclass_name)
-          #end
+          constant.set_superclass_alias!(superclass_name)
         end
       end
 

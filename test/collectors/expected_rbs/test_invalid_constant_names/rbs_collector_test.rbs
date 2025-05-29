@@ -1,0 +1,4 @@
+class ::RBSCollectorTest
+  def foo: (::IO::Generic_writable a) -> ::Array[::IO::Foo::Invalid_constant]
+         | () -> ::IO::Bar::Invalid
+end

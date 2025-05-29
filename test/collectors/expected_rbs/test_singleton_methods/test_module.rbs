@@ -1,0 +1,3 @@
+module ::TestModule
+  def self.foo: () -> nil
+end

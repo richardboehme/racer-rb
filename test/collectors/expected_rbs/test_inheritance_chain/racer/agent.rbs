@@ -1,0 +1,2 @@
+class ::Racer::Agent < ::Array[untyped]
+end

@@ -1,0 +1,5 @@
+class ::RBSCollectorTest::A::B::C::F
+  prepend ::Enumerable[untyped]
+
+  def each: () { (untyped) -> untyped } -> untyped
+end

@@ -1,0 +1,3 @@
+class ::Racer::Agent
+  def foo: (::RBSCollectorTest::A::B::C::D a) -> ::RBSCollectorTest::A::B::C::E
+end

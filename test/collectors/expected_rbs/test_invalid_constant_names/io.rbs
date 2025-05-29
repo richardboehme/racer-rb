@@ -1,0 +1,3 @@
+class ::IO
+  include ::IO::Generic_readable
+end

@@ -1,0 +1,2 @@
+module ::RBSCollectorTest::A : ::BasicObject
+end

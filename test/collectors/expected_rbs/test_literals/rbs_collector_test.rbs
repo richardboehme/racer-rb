@@ -1,0 +1,9 @@
+class ::RBSCollectorTest
+  def foo: (bool a, bool b, nil c) -> bool
+
+  def bar: () -> bool
+
+  def baz: () -> nil
+
+  def union: () -> (nil | bool)
+end

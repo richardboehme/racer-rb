@@ -1,0 +1,7 @@
+module ::RBSCollectorTest::A::B::C::E
+  extend ::RBSCollectorTest::A::B::C
+
+  prepend ::RBSCollectorTest::A::B::C
+
+  include ::RBSCollectorTest::A
+end

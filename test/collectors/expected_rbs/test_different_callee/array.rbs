@@ -1,0 +1,6 @@
+class ::Array[unchecked out Elem]
+  include ::RBSCollectorTest::A
+
+  def to_json: () -> nil
+             | ...
+end

@@ -1,0 +1,10 @@
+class ::RBSCollectorTest
+  def foo: () -> (::String | ::Integer)
+         | (::Integer a) -> (::String | ::Integer)
+         | (::String a) -> ::String
+
+  def bar: (::Array[::Integer] a) -> ::Integer
+         | (::Array[::String] a) -> ::String
+
+  def self.foo: () -> ::String
+end

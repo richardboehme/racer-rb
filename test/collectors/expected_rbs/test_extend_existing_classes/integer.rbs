@@ -1,0 +1,5 @@
+class ::Integer
+  def prime?: () -> nil
+
+  def self.bar: () -> nil
+end

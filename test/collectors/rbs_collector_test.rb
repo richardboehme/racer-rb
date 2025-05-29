@@ -67,7 +67,7 @@ class RBSCollectorTest < Minitest::Test
         params: [{ name: :a, klass: Array, generic_arguments: [[String]], type: :required }],
         return_type: String
       )
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -78,7 +78,7 @@ class RBSCollectorTest < Minitest::Test
     [
       trace(name: :foo, kind: :singleton),
       trace(name: :foo, owner: TestModule, kind: :singleton, constant_updates: [TestModule]),
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -112,7 +112,7 @@ class RBSCollectorTest < Minitest::Test
       trace(name: :param_without_name, params: [
         { name: nil, type: :required }
       ])
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -150,7 +150,7 @@ class RBSCollectorTest < Minitest::Test
           ),
         constant_updates: [Array, Hash, Symbol, Integer, String, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
       )
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -166,7 +166,7 @@ class RBSCollectorTest < Minitest::Test
         return_type: A::B::C::E,
         constant_updates: [Racer, Racer::Agent, RBSCollectorTest, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
       ),
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -178,7 +178,7 @@ class RBSCollectorTest < Minitest::Test
       trace(name: :foo, visibility: :public),
       trace(name: :bar, visibility: :private),
       trace(name: :baz, visibility: :protected)
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -193,7 +193,7 @@ class RBSCollectorTest < Minitest::Test
       trace(name: :sqrt, owner: Integer, kind: :singleton),
       trace(name: :foo, owner: Hash, constant_updates: [Hash]),
       trace(name: :initialize, owner: Hash, visibility: :private),
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -217,7 +217,7 @@ class RBSCollectorTest < Minitest::Test
       trace(name: :union, return_type: TrueClass),
       trace(name: :union, return_type: FalseClass),
       trace(name: :union, return_type: NilClass)
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -271,7 +271,7 @@ class RBSCollectorTest < Minitest::Test
         block_param: to_block_param(traces: [{ self_type: to_constant_instance(A::B::C::F, singleton: true) }]),
         constant_updates: [A::B::C::F]
       )
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -297,7 +297,7 @@ class RBSCollectorTest < Minitest::Test
         # Should use existing superclass if present (in this case File)
         to_constant(Tempfile, superclass: "Delegator1234"),
       ])
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -323,7 +323,7 @@ class RBSCollectorTest < Minitest::Test
         return_type: to_constant_instance("Array", generic_arguments: [["IO::Foo::invalid_constant"]])
       ),
       trace(name: :foo, return_type: to_constant_instance("IO::Bar::invalid"))
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -335,7 +335,7 @@ class RBSCollectorTest < Minitest::Test
       trace(
         name: :"` test: foo bar`",
       )
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -352,7 +352,7 @@ class RBSCollectorTest < Minitest::Test
         to_constant(A::B::C::D, extended_modules: [Enumerable]),
         to_constant(String, included_modules: [Comparable])
       ])
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -365,7 +365,7 @@ class RBSCollectorTest < Minitest::Test
         Random::Base,
         to_constant(Random, superclass: Random::Base)
       ])
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -392,7 +392,7 @@ class RBSCollectorTest < Minitest::Test
         owner: A,
         callee: Array
       )
-    ].each { collector.collect(it) }
+    ].each { collector.collect(_1) }
 
     assert_rbs(__method__, collector)
   end
@@ -406,38 +406,53 @@ class RBSCollectorTest < Minitest::Test
   end
 
   def assert_rbs(method_id, collector)
-    io = Tempfile.new
-    collector.stop(path: io.path)
-    io.flush
-    actual = io.read
+    Dir.mktmpdir do |directory|
+      collector.stop(path: directory)
 
-    path = "test/collectors/expected_rbs/#{method_id}.rbs"
-    unless File.exist?(path)
-      if write?
-        File.write(path, actual)
-        assert false, "Written file because A=write was set."
-      else
-        assert false, "Files does not exist. Pass A=write to create the file."
+      expected_path = "test/collectors/expected_rbs/#{method_id}"
+      expected_files = Dir["#{expected_path}/**.rbs"]
+
+      if expected_files.empty?
+        if write?
+          FileUtils.mv(directory, expected_path)
+          # At the end of the block Dir.mktmpdir tries to remove the directory so it needs to be present
+          FileUtils.mkdir(directory)
+          assert false, "Written file because A=write was set."
+        else
+          assert false, "Files do not exist. Pass A=write to create the file."
+        end
       end
-    end
 
-    expected = File.read(path)
+      expected_files.each do |file_path|
+        expected = File.read(file_path)
+        actual_path = File.join(directory, File.basename(file_path))
+        actual =
+          if File.exist?(actual_path)
+            File.read(actual_path)
+          end
 
-    if write? && expected != actual
-      File.write(path, actual)
-      assert false, "Updated file because A=write was set."
-    else
-      assert_equal expected, actual, message(nil, "") {
-        differ =
-          ::Difftastic::Differ.new(
-            color: :always,
-            tab_width: 2,
-            syntax_highlight: :off,
-            left_label: "Expected",
-            right_label: "to be equal"
-          )
-        differ.diff_ruby(actual, expected)
-      }
+        if write? && expected != actual
+          if actual
+            File.write(file_path, actual)
+          else
+            File.delete(file_path)
+          end
+
+          assert false, "Updated file because A=write was set."
+        else
+          assert_equal expected, actual, message(nil, "") {
+            differ =
+              ::Difftastic::Differ.new(
+                color: :always,
+                tab_width: 2,
+                syntax_highlight: :off,
+                left_label: "Expected",
+                right_label: "to be equal"
+              )
+            differ.diff_ruby(actual, expected)
+          }
+        end
+      end
     end
   end
 
@@ -463,9 +478,9 @@ class RBSCollectorTest < Minitest::Test
       method_kind: kind,
       method_visibility: visibility,
       return_type: to_constant_instance(return_type),
-      params: params.map { to_param(**it) },
+      params: params.map { to_param(**_1) },
       block_param:,
-      constant_updates: constant_updates.map { to_constant(it) }
+      constant_updates: constant_updates.map { to_constant(_1) }
     )
   end
 
@@ -494,14 +509,14 @@ class RBSCollectorTest < Minitest::Test
   def to_block_param(traces:, name: :block)
     Racer::Trace::BlockParam.new(
       name:,
-      traces: traces.map { to_block_trace(**it) }
+      traces: traces.map { to_block_trace(**_1) }
     )
   end
 
   def to_block_trace(params: [], self_type: nil, return_type: NilClass, block_param: nil)
     Racer::Trace::BlockTrace.new(
       self_type: self_type && to_constant_instance(self_type),
-      params: params.map { to_param(**it) },
+      params: params.map { to_param(**_1) },
       return_type: to_constant_instance(return_type),
       block_param:
     )
@@ -513,7 +528,7 @@ class RBSCollectorTest < Minitest::Test
     Racer::Trace::ConstantInstance.new(
       name: name.to_s,
       singleton:,
-      generic_arguments: generic_arguments.map { |union| union.map { to_constant_instance(it) } }
+      generic_arguments: generic_arguments.map { |union| union.map { to_constant_instance(_1) } }
     )
   end
 end

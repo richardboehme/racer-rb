@@ -1,6 +1,0 @@
-class ::String
-end
-
-class ::RBSCollectorTest
-  def foo: () -> ::String
-end

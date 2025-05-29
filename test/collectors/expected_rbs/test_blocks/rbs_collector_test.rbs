@@ -1,0 +1,7 @@
+class ::RBSCollectorTest
+  def foo: () { (::String | ::RBSCollectorTest::A::B::C::E a, ?::Integer b) [self: ::String | ::Integer] -> (::RBSCollectorTest::A::B::C::D | ::String) } -> nil
+         | () { () -> (::String | ::Integer) } -> nil
+         | () { (::String a) -> ::Integer } -> nil
+
+  def bar: () { () [self: singleton(::RBSCollectorTest::A::B::C::F)] -> nil } -> nil
+end

@@ -1,0 +1,3 @@
+class ::String
+  include ::Comparable
+end

@@ -1,9 +1,0 @@
-class ::Random::Base
-end
-
-class ::Random < ::RBS::Unnamed::Random_Base
-end
-
-class ::RBSCollectorTest
-  def foo: () -> nil
-end

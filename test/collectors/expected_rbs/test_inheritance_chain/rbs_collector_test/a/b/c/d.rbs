@@ -1,0 +1,9 @@
+class ::RBSCollectorTest::A::B::C::D < ::RBSCollectorTest::A::B
+  extend ::RBSCollectorTest::A
+
+  prepend ::RBSCollectorTest::A::B::C::E
+
+  include ::RBSCollectorTest::A
+
+  include ::RBSCollectorTest::A::B::C
+end

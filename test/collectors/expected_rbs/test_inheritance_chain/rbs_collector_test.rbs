@@ -1,0 +1,3 @@
+class ::RBSCollectorTest
+  def foo: () -> nil
+end
