@@ -7,13 +7,14 @@ class Racer::Agent
     @server = nil
     @collectors = collectors
     @should_stop = false
-    @active_connections = []
+    @agent_threads = []
   end
 
   def start
     unless @server.nil?
       raise "tried to start server again"
     end
+    Process.setproctitle("Racer: Agent")
 
     @server = UNIXServer.new(@server_path)
 
@@ -31,18 +32,18 @@ class Racer::Agent
       end
 
     trap "HUP" do
-      puts "Shutting down agent... Waiting for #{@active_connections.size} connections to finish"
-      if @active_connections.empty?
-        exit
-      end
-      @should_stop = true
+      exit
     end
 
     at_exit do
+      puts "Shutting down agent. Waiting for all clients to finish sending messages..."
+      @agent_threads.each(&:join)
+      puts "Closed server. Waiting for collectors to process messages..."
       @server.close
       @queue.close if @queue.empty?
       File.unlink(@server_path)
       worker_thread.join
+      puts "Done"
     end
 
     main_loop
@@ -52,13 +53,12 @@ class Racer::Agent
 
   def main_loop
     loop do
-      @active_connections << (connection = @server.accept)
+      connection = @server.accept
       # this is not really good because new clients need to wait until first client finished but for now its okay
-      worker_loop(connection)
-
-      if @active_connections.size == 0 && @should_stop
-        return
-      end
+      @agent_threads <<
+        Thread.new do
+          worker_loop(connection)
+        end
     end
   end
 
@@ -97,7 +97,7 @@ class Racer::Agent
       messages.each do |data|
         if data == "stop"
           puts "Received last message from one worker"
-          @active_connections.delete(connection)
+          # Exits the thread
           return
         end
 
