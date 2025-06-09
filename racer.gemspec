@@ -35,8 +35,6 @@ Gem::Specification.new do |spec|
   spec.extensions = ["ext/racer/extconf.rb"]
 
   spec.add_dependency "rbs"
-  # Remove later
-  spec.add_dependency "vernier"
 
   spec.add_development_dependency "rake-compiler"
   spec.add_development_dependency "vernier"
