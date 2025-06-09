@@ -1,5 +1,6 @@
 require "rbs"
 require "fileutils"
+require "yaml"
 
 module Racer::Collectors
   class RBSCollector
@@ -58,6 +59,14 @@ module Racer::Collectors
 
       loader = RBS::EnvironmentLoader.new
       libraries.each { loader.add(library: _1) }
+
+      rbs_collection_config = Pathname.new("rbs_collection.yaml")
+      if rbs_collection_config.exist?
+        lockfile_path = RBS::Collection::Config.to_lockfile_path(rbs_collection_config)
+        lockfile_content = YAML.load_file(lockfile_path)
+        lockfile = RBS::Collection::Config::Lockfile.from_lockfile(lockfile_path:, data: lockfile_content)
+        loader.add_collection(lockfile)
+      end
 
       @environment = RBS::Environment.from_loader(loader).resolve_type_names
       @definition_builder = RBS::DefinitionBuilder.new(env: @environment)
