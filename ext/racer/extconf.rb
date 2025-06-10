@@ -11,4 +11,4 @@ append_cflags("-fvisibility=hidden")
 have_library("pthread")
 have_library("json-c")
 
-create_makefile "racer"
+create_makefile "racer/racer"
