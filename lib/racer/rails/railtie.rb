@@ -12,7 +12,7 @@ module Racer
           end
 
           setup do
-            Racer.start(path_regex: %r(/app|test/), max_generic_depth: 3)
+            Racer.start(path_regex: %r(\A#{Rails.root.to_s}/(app|lib|test|spec)/), max_generic_depth: 3)
           end
 
           teardown do
@@ -23,13 +23,13 @@ module Racer
     end
 
     config.before_initialize do
-      if defined?(Racer::MinitestPlugin)
-        Racer.start(path_regex: %r(/app|test/), max_generic_depth: 3)
+      if defined?(Racer::MinitestPlugin) || defined?(Racer::RSpecPlugin)
+        Racer.start(path_regex: %r(\A#{Rails.root.to_s}/(app|lib|test|spec)/), max_generic_depth: 3)
       end
     end
 
     config.after_initialize do
-      if defined?(Racer::MinitestPlugin)
+      if defined?(Racer::MinitestPlugin) || defined?(Racer::RSpecPlugin)
         Racer.stop
         Racer.flush
       end
