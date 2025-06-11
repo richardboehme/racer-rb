@@ -687,9 +687,11 @@ process_return_event(rb_trace_arg_t* trace_arg) {
   trace->return_type = value_to_constant_instance(return_value);
 
   if(trace->block_param.has_value()) {
-    VALUE tracepoint_id = trace->block_param.value().tracepoint_id;
+    auto block_param = trace->block_param.value();
+    VALUE tracepoint_id = block_param.tracepoint_id;
     if(tracepoint_id) {
       rb_tracepoint_disable(tracepoint_id);
+      block_param.tracepoint_id = 0;
     }
   }
 
@@ -917,6 +919,14 @@ static VALUE stop(VALUE self)
       auto* trace = stack.back();
       stack.pop_back();
       if(!trace) continue;
+
+      if(trace->block_param.has_value()) {
+        auto block_param = trace->block_param.value();
+        if(block_param.tracepoint_id != 0) {
+          rb_tracepoint_disable(block_param.tracepoint_id);
+          block_param.tracepoint_id = 0;
+        }
+      }
 
       free_trace(trace);
     }
