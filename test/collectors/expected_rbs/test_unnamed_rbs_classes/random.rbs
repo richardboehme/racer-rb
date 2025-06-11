@@ -1,0 +1,3 @@
+class ::Random < ::RBS::Unnamed::Random_Base
+  include ::RBSCollectorTest::A
+end

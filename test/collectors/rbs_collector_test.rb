@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "difftastic"
+require "cgi"
 
 module TestModule; end
 
@@ -277,7 +278,7 @@ class RBSCollectorTest < Minitest::Test
   end
 
   def test_inheritance_chain
-    collector = Racer::Collectors::RBSCollector.new(libraries: ["tempfile"])
+    collector = Racer::Collectors::RBSCollector.new(libraries: ["tempfile", "cgi"])
 
     [
       trace(name: :foo, constant_updates: [
@@ -296,6 +297,9 @@ class RBSCollectorTest < Minitest::Test
         "Delegator1234",
         # Should use existing superclass if present (in this case File)
         to_constant(Tempfile, superclass: "Delegator1234"),
+        # Should use generics of superclass if existing
+        CGI,
+        to_constant(CGI::Cookie, superclass: Array, included_modules: [A])
       ])
     ].each { collector.collect(_1) }
 
@@ -363,7 +367,7 @@ class RBSCollectorTest < Minitest::Test
     [
       trace(name: :foo, constant_updates: [
         Random::Base,
-        to_constant(Random, superclass: Random::Base)
+        to_constant(Random, superclass: Random::Base, included_modules: [A])
       ])
     ].each { collector.collect(_1) }
 
@@ -410,7 +414,7 @@ class RBSCollectorTest < Minitest::Test
       collector.stop(path: directory)
 
       expected_path = "test/collectors/expected_rbs/#{method_id}"
-      expected_files = Dir["#{expected_path}/**.rbs"]
+      expected_files = Dir["#{expected_path}/**/**.rbs"].map { Pathname.new(_1).relative_path_from(expected_path) }
 
       if expected_files.empty?
         if write?
@@ -423,9 +427,10 @@ class RBSCollectorTest < Minitest::Test
         end
       end
 
-      expected_files.each do |file_path|
+      expected_files.each do |file_name|
+        file_path = File.join(expected_path, file_name)
         expected = File.read(file_path)
-        actual_path = File.join(directory, File.basename(file_path))
+        actual_path = File.join(directory, file_name)
         actual =
           if File.exist?(actual_path)
             File.read(actual_path)
@@ -452,6 +457,35 @@ class RBSCollectorTest < Minitest::Test
             differ.diff_ruby(actual, expected)
           }
         end
+      end
+
+      actual_file_names = Dir["#{directory}/**/**.rbs"].map { Pathname.new(_1).relative_path_from(directory) }
+      missing_files = actual_file_names - expected_files
+      wrote = false
+      missing_files.each do |file_name|
+        current_actual_path = File.join(directory, file_name)
+        actual = File.read(current_actual_path)
+        if write?
+          path = File.join(expected_path, file_name)
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, actual)
+          wrote = true
+        else
+          assert_equal "", actual, message(nil, "") {
+            differ =
+              ::Difftastic::Differ.new(
+                color: :always,
+                tab_width: 2,
+                syntax_highlight: :off,
+                left_label: "Expected",
+                right_label: "to be equal"
+              )
+            differ.diff_ruby(actual, "")
+          }
+        end
+      end
+      if wrote
+        assert false, "Added file because A=write was set"
       end
     end
   end

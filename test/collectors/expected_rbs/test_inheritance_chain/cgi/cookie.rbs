@@ -1,0 +1,3 @@
+class ::CGI::Cookie < ::Array[::String]
+  include ::RBSCollectorTest::A
+end
