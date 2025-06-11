@@ -5,7 +5,11 @@
 #
 # If no path argument was passed the rails:prepare rake task is being executed. In this case racer is being required during the rails boot process
 # and installs the railtie accordingly.
-require "rails" if defined?(Rails)
+begin
+  require "rails"
+rescue LoadError
+  # no-op rails not available
+end
 
 require "racer"
 require_relative "minitest_plugin"
