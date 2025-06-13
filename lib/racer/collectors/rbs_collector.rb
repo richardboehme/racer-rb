@@ -548,6 +548,12 @@ module Racer::Collectors
       end
 
       if constants.size > 1
+        constants.each do |constant|
+          unless constant.generic_arguments.empty?
+            constants.delete_if { _1.name == constant.name && _1.generic_arguments.empty? }
+          end
+        end
+
         return RBS::Types::Union.new(types: constants.map { |type| to_rbs_type(type) }, location: nil)
       end
 

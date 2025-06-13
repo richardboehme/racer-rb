@@ -150,6 +150,14 @@ class RBSCollectorTest < Minitest::Test
             ]
           ),
         constant_updates: [Array, Hash, Symbol, Integer, String, A, A::B, A::B::C, A::B::C::D, A::B::C::E]
+      ),
+      trace(
+        name: :bar,
+        return_type: to_constant_instance(Array, generic_arguments: [])
+      ),
+      trace(
+        name: :bar,
+        return_type: to_constant_instance(Array, generic_arguments: [[String]])
       )
     ].each { collector.collect(_1) }
 
