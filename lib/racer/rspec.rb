@@ -14,6 +14,6 @@ end
 require "racer"
 require_relative "rspec_plugin"
 
-Racer::RSpecPlugin.agent_pid = Racer.start_agent(stop_at_exit: false, collectors: [Racer::Collectors::RBSCollector.new(libraries: ["json", "minitest", "tempfile", "base64", "pathname"])])
+Racer::RSpecPlugin.agent_pid = Racer.start_agent(stop_at_exit: false, collectors: [Racer::Collectors::RBSCollector.new(libraries: ["json", "minitest", "tempfile", "base64", "pathname", "logger", "uri", "erb", "date", "ipaddr", "securerandom"])])
 
 puts "Agent started with pid #{Racer::RSpecPlugin.agent_pid}"

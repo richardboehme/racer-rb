@@ -14,7 +14,7 @@ end
 require "racer"
 require_relative "minitest_plugin"
 
-Racer::MinitestPlugin.agent_pid = Racer.start_agent(stop_at_exit: false, collectors: [Racer::Collectors::RBSCollector.new(libraries: ["json", "minitest", "tempfile", "base64", "pathname"])])
+Racer::MinitestPlugin.agent_pid = Racer.start_agent(stop_at_exit: false, collectors: [Racer::Collectors::RBSCollector.new(libraries: ["json", "minitest", "tempfile", "base64", "pathname", "logger", "uri", "erb", "date", "ipaddr", "securerandom"])])
 puts "Agent started with pid #{Racer::MinitestPlugin.agent_pid}"
 
 Minitest.register_plugin Racer::MinitestPlugin
