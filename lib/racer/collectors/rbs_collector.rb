@@ -49,6 +49,17 @@ module Racer::Collectors
     end
     using EnsureValidMethodName
 
+    module FilterMultiEntryMembers
+      refine RBS::Environment::MultiEntry do
+        def members(of:)
+          decls.flat_map do |decl|
+            decl.decl.members.select { _1.is_a?(of) }
+          end
+        end
+      end
+    end
+    using FilterMultiEntryMembers
+
     def initialize(libraries: [])
       @results = {}
 
@@ -154,19 +165,26 @@ module Racer::Collectors
       return if @results.key?(constant.name)
       return if @existing_types.key?(constant.name)
 
-      # TODO: Should we refactor this to store the relative name at the Constant class?
-      # We also need the absolute path though to check in the maps above
-      path = constant.name.split("::").map(&:to_sym)
-
-      type_name =
-        RBS::TypeName.new(
-          name: path.pop,
-          namespace: RBS::Namespace.new(path:, absolute: true)
-        )
+      type_name = to_type_name(constant.name)
 
       class_decl = @environment.class_decls[type_name]
       if class_decl
         @existing_types[constant.name] = { class_decl:, type_name: }
+
+        included_modules = Set.new(class_decl.members(of: RBS::AST::Members::Include).map(&:name))
+        constant.included_modules.reject! do |module_name|
+          included_modules.include?(to_type_name(module_name))
+        end
+
+        prepended_modules = Set.new(class_decl.members(of: RBS::AST::Members::Prepend).map(&:name))
+        constant.prepended_modules.reject! do |module_name|
+          prepended_modules.include?(to_type_name(module_name))
+        end
+
+        extended_modules = Set.new(class_decl.members(of: RBS::AST::Members::Extend).map(&:name))
+        constant.extended_modules.reject! do |module_name|
+          extended_modules.include?(to_type_name(module_name))
+        end
       end
 
       if constant.name == "Object"
@@ -529,7 +547,12 @@ module Racer::Collectors
     end
 
     def to_type_name(type_name_str)
-      RBS::TypeName.new(name: type_name_str.to_sym, namespace: RBS::Namespace.root)
+      path = type_name_str.split("::").map(&:to_sym)
+
+      RBS::TypeName.new(
+        name: path.pop,
+        namespace: RBS::Namespace.new(path:, absolute: true)
+      )
     end
 
     def to_rbs_type(*constants)

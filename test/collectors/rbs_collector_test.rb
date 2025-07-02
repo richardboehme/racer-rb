@@ -362,6 +362,7 @@ class RBSCollectorTest < Minitest::Test
         to_constant(A::B, included_modules: [Enumerable]),
         to_constant(A::B::C::F, prepended_modules: [Enumerable]),
         to_constant(A::B::C::D, extended_modules: [Enumerable]),
+        # String already defines important <=> method
         to_constant(String, included_modules: [Comparable])
       ])
     ].each { collector.collect(_1) }
@@ -403,6 +404,29 @@ class RBSCollectorTest < Minitest::Test
         ],
         owner: A,
         callee: Array
+      )
+    ].each { collector.collect(_1) }
+
+    assert_rbs(__method__, collector)
+  end
+
+  def test_reject_existing_modules
+    collector = Racer::Collectors::RBSCollector.new(libraries: ["did_you_mean"])
+
+     [
+      trace(
+        name: :foo,
+        constant_updates: [
+          to_constant(Array, included_modules: [Enumerable])
+        ],
+        owner: Array
+      ),
+      trace(
+        name: :bar,
+        constant_updates: [
+          to_constant(NameError, prepended_modules: [DidYouMean::Correctable])
+        ],
+        owner: NameError
       )
     ].each { collector.collect(_1) }
 

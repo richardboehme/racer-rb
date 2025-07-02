@@ -1,0 +1,3 @@
+class ::Array[unchecked out Elem]
+  def foo: () -> nil
+end
