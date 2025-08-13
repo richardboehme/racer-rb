@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-class TestRacer < Minitest::Test
+class RacerTest < Minitest::Test
   write = ARGV.include?("write")
 
   Dir["test/test_cases/**"].each_with_index do |test_case, index|
