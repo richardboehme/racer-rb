@@ -16,3 +16,5 @@ gem "difftastic"
 gem "irb"
 gem "benchmark"
 gem "profile-viewer"
+
+gem "cgi"
