@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ["Richard Böhme"]
   spec.email = ["richard.boehme1999@gmail.com"]
 
-  spec.summary = "Runtime tracer for ruby"
-  spec.description = "Runtime tracer for ruby"
+  spec.summary = "Runtime type tracer for ruby"
+  spec.description = "Runtime type tracer for ruby"
   spec.homepage = "https://github.com/richardboehme/racer-rb"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.0.0"
+  spec.required_ruby_version = ">= 4.0.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
@@ -35,13 +35,4 @@ Gem::Specification.new do |spec|
   spec.extensions = ["ext/racer/extconf.rb"]
 
   spec.add_dependency "rbs"
-
-  spec.add_development_dependency "rake-compiler"
-  spec.add_development_dependency "vernier"
-
-  # Uncomment to register a new dependency of your gem
-  # spec.add_dependency "example-gem", "~> 1.0"
-
-  # For more information and examples about making a new gem, check out our
-  # guide at: https://bundler.io/guides/creating_gem.html
 end

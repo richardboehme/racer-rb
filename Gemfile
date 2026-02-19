@@ -18,3 +18,6 @@ gem "benchmark"
 gem "profile-viewer"
 
 gem "cgi"
+
+gem "rake-compiler"
+gem "vernier"
