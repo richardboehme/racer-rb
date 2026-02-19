@@ -961,7 +961,6 @@ static void flush_end(VALUE arg)
   }
   close(socketFd);
   socketFd = -1;
-  fprintf(stdout, "flushed\n");
 }
 
 static VALUE flush(VALUE self)

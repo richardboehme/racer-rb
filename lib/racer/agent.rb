@@ -36,14 +36,14 @@ class Racer::Agent
     end
 
     at_exit do
-      puts "Shutting down agent. Waiting for all clients to finish sending messages..."
+      # puts "Shutting down agent. Waiting for all clients to finish sending messages..."
       @agent_threads.each(&:join)
-      puts "Closed server. Waiting for collectors to process messages..."
+      # puts "Closed server. Waiting for collectors to process messages..."
       @server.close
       @queue.close if @queue.empty?
       File.unlink(@server_path)
       worker_thread.join
-      puts "Done"
+      # puts "Done"
     end
 
     main_loop
@@ -96,7 +96,7 @@ class Racer::Agent
 
       messages.each do |data|
         if data == "stop"
-          puts "Received last message from one worker"
+          # puts "Received last message from one worker"
           # Exits the thread
           return
         end
