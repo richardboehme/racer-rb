@@ -61,6 +61,7 @@ class RacerTest < Minitest::Test
 
               $stderr.puts differ.diff_yaml(actual, expected)
             end
+            exit -1
           end
         end
 
@@ -72,11 +73,11 @@ class RacerTest < Minitest::Test
 
       _stdout_s, stderr_s, status = Open3.capture3("bundle exec #{Gem.ruby} #{file.path}")
 
-      unless stderr_s.empty?
-        assert false, stderr_s
-      end
-
       unless status.success?
+        unless stderr_s.empty?
+          assert false, stderr_s
+        end
+
         assert false, "Process failed"
       end
     end
