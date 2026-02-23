@@ -1,45 +1,88 @@
-# Racer RB
+# Racer
 
-Use following command to use new ruby version
-```
-PATH="/home/richard/.rubies/ruby-master/bin:$PATH" bundle exec ruby foo.rb
-```
+> [!WARNING]
+> This is an early-stage implementation. It may crash, produce incorrect type signatures, or behave unexpectedly. Use with caution.
 
-
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/racer`. To experiment with that code, run `bin/console` for an interactive prompt.
+Racer generates [RBS](https://github.com/ruby/rbs) type signatures by tracing your application at runtime during test runs. Run your test suite and find the collected signatures written to `sig/generated/`.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add to your `Gemfile` (test group recommended):
 
-Install the gem and add to the application's Gemfile by executing:
-
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem "racer-rb"
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+### Minitest
 
-## Development
+At the top of your test helper, require the Minitest integration:
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```ruby
+require "racer/minitest"
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+### RSpec
+
+In your spec helper, require the RSpec integration:
+
+```ruby
+require "racer/rspec"
+
+RSpec.configure do |config|
+  Racer::RSpecPlugin.configure(config)
+end
+```
+
+Make sure to require Racer at the top of the spec helper.
+
+### Rails
+
+When using Rails, a Railtie is automatically loaded. It sets up tracing around each test with a `path_regex` scoped to `app/`, `lib/`, `test/`, and `spec/`.
+
+### Standalone
+
+You can also use Racer manually:
+
+```ruby
+require "racer"
+
+pid = Racer.start_agent
+Racer.start(path_regex: /my_app/, max_generic_depth: 2)
+
+# ... run your code ...
+
+Racer.stop
+Racer.flush
+Racer.stop_agent(pid)
+```
+
+**Options for `Racer.start`:**
+
+| Option | Default | Description |
+|---|---|---|
+| `path_regex` | `nil` | Only trace files whose path matches this regex. Highly recommended to avoid tracing of gem internals. |
+| `max_generic_depth` | `2` | Maximum depth for tracking generic type arguments (e.g. `Array[String]`). |
+
+### Tips
+
+* Ensure to use eager loading when generating type signatures to trace DSL method calls (e.g. by setting the `CI=1` env variable in Rails setups)
+
+## Output
+
+Generated RBS files are written to `sig/generated/`. These can be used with tools like [Steep](https://github.com/soutaro/steep) for static type checking.
+
+## How it works
+
+Racer hooks into Ruby's TracePoint mechanism via a C extension to observe method calls, parameter types, return values, and module hierarchy during test runs. Traces are sent to a background agent process over a Unix socket, which collects and deduplicates them. When the test suite finishes, the agent writes RBS files to `sig/generated/`.
+
+Some more info can be found in the [slides](https://github.com/richardboehme/racer-rb-presentation/) that were used to present this gem at [Dresden.rb user group](https://dresdenrb.onruby.de/).
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/richardboehme/racer-rb. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/richardboehme/racer-rb/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/richardboehme/racer-rb.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Racer project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/richardboehme/racer-rb/blob/main/CODE_OF_CONDUCT.md).
+MIT
