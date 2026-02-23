@@ -68,6 +68,8 @@ Racer.stop_agent(pid)
 ### Tips
 
 * Ensure to use eager loading when generating type signatures to trace DSL method calls (e.g. by setting the `CI=1` env variable in Rails setups)
+* Racer works out of the box with parallel tests. No need to configure anything.
+* Racer integrates with gem signatures using RBS collection, however the support might not be stable.
 
 ## Output
 
