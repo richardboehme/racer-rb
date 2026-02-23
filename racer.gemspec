@@ -3,7 +3,7 @@
 require_relative "lib/racer/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "racer"
+  spec.name = "racer-rb"
   spec.version = Racer::VERSION
   spec.authors = ["Richard Böhme"]
   spec.email = ["richard.boehme1999@gmail.com"]

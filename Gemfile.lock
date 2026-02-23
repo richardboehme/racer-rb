@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    racer (0.1.0)
+    racer-rb (0.1.0)
       rbs
 
 GEM
@@ -25,7 +25,7 @@ GEM
       reline (>= 0.4.2)
     json (2.7.2)
     language_server-protocol (3.17.0.3)
-    logger (1.6.2)
+    logger (1.7.0)
     minitest (5.27.0)
     optparse (0.6.0)
     parallel (1.25.1)
@@ -49,8 +49,9 @@ GEM
     rake (13.2.1)
     rake-compiler (1.2.7)
       rake
-    rbs (3.7.0)
+    rbs (3.10.3)
       logger
+      tsort
     rdoc (6.14.0)
       erb
       psych (>= 4.0.0)
@@ -75,6 +76,7 @@ GEM
     ruby-progressbar (1.13.0)
     stringio (3.1.7)
     strscan (3.1.0)
+    tsort (0.2.0)
     unicode-display_width (2.5.0)
     vernier (1.7.0)
     webrick (1.9.1)
@@ -90,7 +92,7 @@ DEPENDENCIES
   irb
   minitest (~> 5.16)
   profile-viewer
-  racer!
+  racer-rb!
   rake (~> 13.0)
   rake-compiler
   rubocop (~> 1.21)
