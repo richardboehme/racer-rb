@@ -13,6 +13,9 @@ Add to your `Gemfile` (test group recommended):
 gem "racer-rb"
 ```
 
+> [!NOTE]
+> Note that Racer requires Ruby 4 and json-c to compile properly.
+
 ## Usage
 
 ### Minitest
