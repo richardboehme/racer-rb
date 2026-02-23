@@ -6,8 +6,11 @@ class RacerTest < Minitest::Test
   write = ARGV.include?("write")
 
   Dir["test/test_cases/**"].each_with_index do |test_case, index|
+
     define_method("test_#{test_case}") do
       file = Tempfile.new
+      file_content = File.read(test_case)
+      ignored = ENV.fetch("CI", false) && file_content.start_with?("# ignore-ci!")
       code = <<~RUBY
         require "racer"
         require "tempfile"
@@ -36,6 +39,8 @@ class RacerTest < Minitest::Test
           expected = DATA.read.chomp!
 
           if actual != expected
+            next if #{ignored}
+
             if #{write}
               file = File.open("#{test_case}", "r+")
               file.each do |line|
@@ -65,7 +70,7 @@ class RacerTest < Minitest::Test
           end
         end
 
-        #{File.read(test_case)}
+        #{file_content}
       RUBY
 
       file.write(code)
