@@ -6,4 +6,8 @@ class ::RBSCollectorTest::A::B::C::D < ::RBSCollectorTest::A::B
   include ::RBSCollectorTest::A
 
   include ::RBSCollectorTest::A::B::C
+
+  include ::Enumerable[untyped]
+
+  def each: () { (untyped) -> untyped } -> untyped
 end

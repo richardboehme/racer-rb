@@ -1,4 +1,4 @@
-module ::RBSCollectorTest::A::B::C::E
+module ::RBSCollectorTest::A::B::C::E : ::BasicObject
   extend ::RBSCollectorTest::A::B::C
 
   prepend ::RBSCollectorTest::A::B::C

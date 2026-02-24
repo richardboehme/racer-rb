@@ -200,13 +200,28 @@ module Racer::Collectors
       @results[constant.name] = { constant:, instance_methods: {}, singleton_methods: {} }
     end
 
-    def to_module_declaration(owner, instance_methods, singleton_methods)
-      self_types =
-        if @modules_in_object_class.include?(owner.name)
-          [RBS::AST::Declarations::Module::Self.new(name: to_type_name("BasicObject"), args: [], location: nil)]
-        else
-          []
+    def find_self_types(owner)
+      self_types = []
+      if @modules_in_object_class.include?(owner.name)
+        self_types << RBS::AST::Declarations::Module::Self.new(name: to_type_name("BasicObject"), args: [], location: nil)
+      end
+
+      owner.included_modules.each do |module_name|
+        constant = @results[module_name][:constant]
+        if (existing_type = @existing_types[module_name])
+          unless existing_type[:class_decl].self_types.empty?
+            self_types.concat(existing_types[:class_decl].self_types)
+          end
         end
+
+        self_types.concat(find_self_types(constant))
+      end
+
+      self_types
+    end
+
+    def to_module_declaration(owner, instance_methods, singleton_methods)
+      self_types = find_self_types(owner)
 
       RBS::AST::Declarations::Module.new(
         name: to_type_name(owner.name),
